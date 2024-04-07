@@ -9183,6 +9183,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "storybook_ui"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "client",
+ "db",
+ "editor",
+ "extension",
+ "fs",
+ "fuzzy",
+ "gpui",
+ "language",
+ "picker",
+ "project",
+ "semantic_version",
+ "serde",
+ "settings",
+ "smallvec",
+ "theme",
+ "theme_selector",
+ "ui",
+ "util",
+ "workspace",
+]
+
+[[package]]
 name = "stringprep"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

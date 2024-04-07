@@ -79,6 +79,7 @@ members = [
     "crates/sqlez_macros",
     "crates/story",
     "crates/storybook",
+    "crates/storybook_ui",
     "crates/sum_tree",
     "crates/tab_switcher",
     "crates/terminal",
@@ -203,6 +204,7 @@ sqlez = { path = "crates/sqlez" }
 sqlez_macros = { path = "crates/sqlez_macros" }
 story = { path = "crates/story" }
 storybook = { path = "crates/storybook" }
+storybook_ui = { path = "crates/storybook_ui" }
 sum_tree = { path = "crates/sum_tree" }
 tab_switcher = { path = "crates/tab_switcher" }
 terminal = { path = "crates/terminal" }
