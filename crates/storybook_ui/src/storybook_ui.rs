@@ -1,5 +1,5 @@
 mod components;
-mod extension_suggest;
+//mod extension_suggest;
 
 use crate::components::StorybookCard;
 
@@ -28,7 +28,7 @@ use workspace::{
 actions!(zed, [Storybook, InstallDevExtension]);
 
 pub fn init(cx: &mut AppContext) {
-    cx.observe_new_views(move |workspace: &mut Workspace, cx| {
+    cx.observe_new_views(move |workspace: &mut Workspace, _cx| {
         workspace
             .register_action(move |workspace, _: &Storybook, cx| {
                 let existing = workspace
@@ -66,14 +66,6 @@ pub fn init(cx: &mut AppContext) {
                     })
                     .detach();
             });
-
-        cx.subscribe(workspace.project(), |_, _, event, cx| match event {
-            project::Event::LanguageNotFound(buffer) => {
-                extension_suggest::suggest(buffer.clone(), cx);
-            }
-            _ => {}
-        })
-        .detach();
     })
     .detach();
 }
