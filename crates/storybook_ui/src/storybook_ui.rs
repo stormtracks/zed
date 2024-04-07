@@ -497,79 +497,8 @@ impl ExtensionsPage {
                                 }))
                                 .tooltip(move |cx| Tooltip::text(repository_url.clone(), cx)),
                             )
-                            .child(
-                                popover_menu(SharedString::from(format!("more-{}", extension.id)))
-                                    .trigger(
-                                        IconButton::new(
-                                            SharedString::from(format!("more-{}", extension.id)),
-                                            IconName::Ellipsis,
-                                        )
-                                        .icon_color(Color::Accent)
-                                        .icon_size(IconSize::Small)
-                                        .style(ButtonStyle::Filled),
-                                    )
-                                    .menu(move |cx| {
-                                        Some(Self::render_remote_extension_context_menu(
-                                            &this,
-                                            extension_id.clone(),
-                                            cx,
-                                        ))
-                                    }),
-                            ),
                     ),
             )
-    }
-
-    fn render_remote_extension_context_menu(
-        this: &View<Self>,
-        extension_id: Arc<str>,
-        cx: &mut WindowContext,
-    ) -> View<ContextMenu> {
-        let context_menu = ContextMenu::build(cx, |context_menu, cx| {
-            context_menu.entry(
-                "Install Another Version...",
-                None,
-                cx.handler_for(&this, move |this, cx| {
-                    this.show_extension_version_list(extension_id.clone(), cx)
-                }),
-            )
-        });
-
-        context_menu
-    }
-
-    fn show_extension_version_list(&mut self, extension_id: Arc<str>, cx: &mut ViewContext<Self>) {
-        let Some(workspace) = self.workspace.upgrade() else {
-            return;
-        };
-
-        cx.spawn(move |this, mut cx| async move {
-            let extension_versions_task = this.update(&mut cx, |_, cx| {
-                let extension_store = ExtensionStore::global(cx);
-
-                extension_store.update(cx, |store, cx| {
-                    store.fetch_extension_versions(&extension_id, cx)
-                })
-            })?;
-
-            let extension_versions = extension_versions_task.await?;
-
-            workspace.update(&mut cx, |workspace, cx| {
-                let fs = workspace.project().read(cx).fs().clone();
-                workspace.toggle_modal(cx, |cx| {
-                    let delegate = ExtensionVersionSelectorDelegate::new(
-                        fs,
-                        cx.view().downgrade(),
-                        extension_versions,
-                    );
-
-                    ExtensionVersionSelector::new(delegate, cx)
-                });
-            })?;
-
-            anyhow::Ok(())
-        })
-        .detach_and_log_err(cx);
     }
 
     fn buttons_for_entry(
