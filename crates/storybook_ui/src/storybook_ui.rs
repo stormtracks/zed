@@ -33,12 +33,12 @@ pub fn init(cx: &mut AppContext) {
                     .active_pane()
                     .read(cx)
                     .items()
-                    .find_map(|item| item.downcast::<ExtensionsPage>());
+                    .find_map(|item| item.downcast::<StorybookPage>());
 
                 if let Some(existing) = existing {
                     workspace.activate_item(&existing, cx);
                 } else {
-                    let extensions_page = ExtensionsPage::new(workspace, cx);
+                    let extensions_page = StorybookPage::new(workspace, cx);
                     workspace.add_item_to_active_pane(Box::new(extensions_page), cx)
                 }
             })
@@ -93,7 +93,7 @@ impl StorybookFilter {
     }
 }
 
-pub struct ExtensionsPage {
+pub struct StorybookPage {
     //workspace: WeakView<Workspace>,
     list: UniformListScrollHandle,
     telemetry: Arc<Telemetry>,
@@ -108,7 +108,7 @@ pub struct ExtensionsPage {
     extension_fetch_task: Option<Task<()>>,
 }
 
-impl ExtensionsPage {
+impl StorybookPage {
     pub fn new(workspace: &Workspace, cx: &mut ViewContext<Workspace>) -> View<Self> {
         cx.new_view(|cx: &mut ViewContext<Self>| {
             let store = ExtensionStore::global(cx);
@@ -642,7 +642,7 @@ impl ExtensionsPage {
         }
     }
 
-    fn fetch_extensions_debounced(&mut self, cx: &mut ViewContext<'_, ExtensionsPage>) {
+    fn fetch_extensions_debounced(&mut self, cx: &mut ViewContext<'_, StorybookPage>) {
         self.extension_fetch_task = Some(cx.spawn(|this, mut cx| async move {
             let search = this
                 .update(&mut cx, |this, cx| this.search_query(cx))
@@ -712,7 +712,7 @@ impl ExtensionsPage {
     }
 }
 
-impl Render for ExtensionsPage {
+impl Render for StorybookPage {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         v_flex()
             .size_full()
@@ -828,15 +828,15 @@ impl Render for ExtensionsPage {
     }
 }
 
-impl EventEmitter<ItemEvent> for ExtensionsPage {}
+impl EventEmitter<ItemEvent> for StorybookPage {}
 
-impl FocusableView for ExtensionsPage {
+impl FocusableView for StorybookPage {
     fn focus_handle(&self, cx: &AppContext) -> gpui::FocusHandle {
         self.query_editor.read(cx).focus_handle(cx)
     }
 }
 
-impl Item for ExtensionsPage {
+impl Item for StorybookPage {
     type Event = ItemEvent;
 
     fn tab_content(&self, _: Option<usize>, selected: bool, _: &WindowContext) -> AnyElement {
