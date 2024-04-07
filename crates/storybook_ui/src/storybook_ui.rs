@@ -78,13 +78,13 @@ pub enum ExtensionStatus {
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-enum ExtensionFilter {
+enum StorybookFilter {
     All,
     Installed,
     NotInstalled,
 }
 
-impl ExtensionFilter {
+impl StorybookFilter {
     pub fn include_dev_extensions(&self) -> bool {
         match self {
             Self::All | Self::Installed => true,
@@ -98,7 +98,7 @@ pub struct ExtensionsPage {
     list: UniformListScrollHandle,
     telemetry: Arc<Telemetry>,
     is_fetching_extensions: bool,
-    filter: ExtensionFilter,
+    filter: StorybookFilter,
     remote_extension_entries: Vec<ExtensionMetadata>,
     dev_extension_entries: Vec<Arc<ExtensionManifest>>,
     filtered_remote_extension_indices: Vec<usize>,
@@ -136,7 +136,7 @@ impl ExtensionsPage {
                 list: UniformListScrollHandle::new(),
                 telemetry: workspace.client().telemetry().clone(),
                 is_fetching_extensions: false,
-                filter: ExtensionFilter::All,
+                filter: StorybookFilter::All,
                 dev_extension_entries: Vec::new(),
                 filtered_remote_extension_indices: Vec::new(),
                 remote_extension_entries: Vec::new(),
@@ -197,12 +197,12 @@ impl ExtensionsPage {
                 .iter()
                 .enumerate()
                 .filter(|(_, extension)| match self.filter {
-                    ExtensionFilter::All => true,
-                    ExtensionFilter::Installed => {
+                    StorybookFilter::All => true,
+                    StorybookFilter::Installed => {
                         let status = Self::extension_status(&extension.id, cx);
                         matches!(status, ExtensionStatus::Installed(_))
                     }
-                    ExtensionFilter::NotInstalled => {
+                    StorybookFilter::NotInstalled => {
                         let status = Self::extension_status(&extension.id, cx);
 
                         matches!(status, ExtensionStatus::NotInstalled)
@@ -684,21 +684,21 @@ impl ExtensionsPage {
             "Loading extensions..."
         } else {
             match self.filter {
-                ExtensionFilter::All => {
+                StorybookFilter::All => {
                     if has_search {
                         "No extensions that match your search."
                     } else {
                         "No extensions."
                     }
                 }
-                ExtensionFilter::Installed => {
+                StorybookFilter::Installed => {
                     if has_search {
                         "No installed extensions that match your search."
                     } else {
                         "No installed extensions."
                     }
                 }
-                ExtensionFilter::NotInstalled => {
+                StorybookFilter::NotInstalled => {
                     if has_search {
                         "No not installed extensions that match your search."
                     } else {
@@ -751,9 +751,9 @@ impl Render for ExtensionsPage {
                                         ToggleButton::new("filter-all", "All")
                                             .style(ButtonStyle::Filled)
                                             .size(ButtonSize::Large)
-                                            .selected(self.filter == ExtensionFilter::All)
+                                            .selected(self.filter == StorybookFilter::All)
                                             .on_click(cx.listener(|this, _event, cx| {
-                                                this.filter = ExtensionFilter::All;
+                                                this.filter = StorybookFilter::All;
                                                 this.filter_extension_entries(cx);
                                             }))
                                             .tooltip(move |cx| {
@@ -765,9 +765,9 @@ impl Render for ExtensionsPage {
                                         ToggleButton::new("filter-installed", "Installed")
                                             .style(ButtonStyle::Filled)
                                             .size(ButtonSize::Large)
-                                            .selected(self.filter == ExtensionFilter::Installed)
+                                            .selected(self.filter == StorybookFilter::Installed)
                                             .on_click(cx.listener(|this, _event, cx| {
-                                                this.filter = ExtensionFilter::Installed;
+                                                this.filter = StorybookFilter::Installed;
                                                 this.filter_extension_entries(cx);
                                             }))
                                             .tooltip(move |cx| {
@@ -779,9 +779,9 @@ impl Render for ExtensionsPage {
                                         ToggleButton::new("filter-not-installed", "Not Installed")
                                             .style(ButtonStyle::Filled)
                                             .size(ButtonSize::Large)
-                                            .selected(self.filter == ExtensionFilter::NotInstalled)
+                                            .selected(self.filter == StorybookFilter::NotInstalled)
                                             .on_click(cx.listener(|this, _event, cx| {
-                                                this.filter = ExtensionFilter::NotInstalled;
+                                                this.filter = StorybookFilter::NotInstalled;
                                                 this.filter_extension_entries(cx);
                                             }))
                                             .tooltip(move |cx| {
