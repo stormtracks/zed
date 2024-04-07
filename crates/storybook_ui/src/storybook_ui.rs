@@ -1,7 +1,5 @@
-mod components;
-//mod extension_suggest;
-
-use crate::components::StorybookCard;
+mod storybook_card;
+use crate::storybook_card::StorybookCard;
 
 use client::telemetry::Telemetry;
 use client::ExtensionMetadata;
