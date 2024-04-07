@@ -69,7 +69,7 @@ pub fn init(cx: &mut AppContext) {
 }
 
 #[derive(Clone)]
-pub enum ExtensionStatus {
+pub enum StorybookStatus {
     NotInstalled,
     Installing,
     Upgrading,
@@ -176,16 +176,16 @@ impl StorybookPage {
         }
     }
 
-    fn extension_status(extension_id: &str, cx: &mut ViewContext<Self>) -> ExtensionStatus {
+    fn extension_status(extension_id: &str, cx: &mut ViewContext<Self>) -> StorybookStatus {
         let extension_store = ExtensionStore::global(cx).read(cx);
 
         match extension_store.outstanding_operations().get(extension_id) {
-            Some(ExtensionOperation::Install) => ExtensionStatus::Installing,
-            Some(ExtensionOperation::Remove) => ExtensionStatus::Removing,
-            Some(ExtensionOperation::Upgrade) => ExtensionStatus::Upgrading,
+            Some(ExtensionOperation::Install) => StorybookStatus::Installing,
+            Some(ExtensionOperation::Remove) => StorybookStatus::Removing,
+            Some(ExtensionOperation::Upgrade) => StorybookStatus::Upgrading,
             None => match extension_store.installed_extensions().get(extension_id) {
-                Some(extension) => ExtensionStatus::Installed(extension.manifest.version.clone()),
-                None => ExtensionStatus::NotInstalled,
+                Some(extension) => StorybookStatus::Installed(extension.manifest.version.clone()),
+                None => StorybookStatus::NotInstalled,
             },
         }
     }
@@ -200,12 +200,12 @@ impl StorybookPage {
                     StorybookFilter::All => true,
                     StorybookFilter::Installed => {
                         let status = Self::extension_status(&extension.id, cx);
-                        matches!(status, ExtensionStatus::Installed(_))
+                        matches!(status, StorybookStatus::Installed(_))
                     }
                     StorybookFilter::NotInstalled => {
                         let status = Self::extension_status(&extension.id, cx);
 
-                        matches!(status, ExtensionStatus::NotInstalled)
+                        matches!(status, StorybookStatus::NotInstalled)
                     }
                 })
                 .map(|(ix, _)| ix),
@@ -335,7 +335,7 @@ impl StorybookPage {
                                     }
                                 })
                                 .color(Color::Accent)
-                                .disabled(matches!(status, ExtensionStatus::Upgrading)),
+                                .disabled(matches!(status, StorybookStatus::Upgrading)),
                             )
                             .child(
                                 Button::new(SharedString::from(extension.id.clone()), "Uninstall")
@@ -348,7 +348,7 @@ impl StorybookPage {
                                         }
                                     })
                                     .color(Color::Accent)
-                                    .disabled(matches!(status, ExtensionStatus::Removing)),
+                                    .disabled(matches!(status, StorybookStatus::Removing)),
                             ),
                     ),
             )
@@ -489,14 +489,14 @@ impl StorybookPage {
     fn buttons_for_entry(
         &self,
         extension: &ExtensionMetadata,
-        status: &ExtensionStatus,
+        status: &StorybookStatus,
         cx: &mut ViewContext<Self>,
     ) -> (Button, Option<Button>) {
         let is_compatible = extension::is_version_compatible(&extension);
         let disabled = !is_compatible;
 
         match status.clone() {
-            ExtensionStatus::NotInstalled => (
+            StorybookStatus::NotInstalled => (
                 Button::new(SharedString::from(extension.id.clone()), "Install")
                     .disabled(disabled)
                     .on_click(cx.listener({
@@ -511,17 +511,17 @@ impl StorybookPage {
                     })),
                 None,
             ),
-            ExtensionStatus::Installing => (
+            StorybookStatus::Installing => (
                 Button::new(SharedString::from(extension.id.clone()), "Install").disabled(true),
                 None,
             ),
-            ExtensionStatus::Upgrading => (
+            StorybookStatus::Upgrading => (
                 Button::new(SharedString::from(extension.id.clone()), "Uninstall").disabled(true),
                 Some(
                     Button::new(SharedString::from(extension.id.clone()), "Upgrade").disabled(true),
                 ),
             ),
-            ExtensionStatus::Installed(installed_version) => (
+            StorybookStatus::Installed(installed_version) => (
                 Button::new(SharedString::from(extension.id.clone()), "Uninstall").on_click(
                     cx.listener({
                         let extension_id = extension.id.clone();
@@ -561,7 +561,7 @@ impl StorybookPage {
                     )
                 },
             ),
-            ExtensionStatus::Removing => (
+            StorybookStatus::Removing => (
                 Button::new(SharedString::from(extension.id.clone()), "Uninstall").disabled(true),
                 None,
             ),
