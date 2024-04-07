@@ -1,11 +1,8 @@
 mod components;
 mod extension_suggest;
-mod extension_version_selector;
 
 use crate::components::StorybookCard;
-use crate::extension_version_selector::{
-    ExtensionVersionSelector, ExtensionVersionSelectorDelegate,
-};
+
 use client::telemetry::Telemetry;
 use client::ExtensionMetadata;
 use editor::{Editor, EditorElement, EditorStyle};
@@ -21,7 +18,7 @@ use std::ops::DerefMut;
 use std::time::Duration;
 use std::{ops::Range, sync::Arc};
 use theme::ThemeSettings;
-use ui::{popover_menu, prelude::*, ContextMenu, ToggleButton, Tooltip};
+use ui::{prelude::*, ToggleButton, Tooltip};
 use util::ResultExt as _;
 use workspace::{
     item::{Item, ItemEvent},
@@ -107,7 +104,7 @@ impl ExtensionFilter {
 }
 
 pub struct ExtensionsPage {
-    workspace: WeakView<Workspace>,
+    //workspace: WeakView<Workspace>,
     list: UniformListScrollHandle,
     telemetry: Arc<Telemetry>,
     is_fetching_extensions: bool,
@@ -145,7 +142,7 @@ impl ExtensionsPage {
             cx.subscribe(&query_editor, Self::on_query_change).detach();
 
             let mut this = Self {
-                workspace: workspace.weak_handle(),
+                //workspace: workspace.weak_handle(),
                 list: UniformListScrollHandle::new(),
                 telemetry: workspace.client().telemetry().clone(),
                 is_fetching_extensions: false,
@@ -414,10 +411,10 @@ impl ExtensionsPage {
         extension: &ExtensionMetadata,
         cx: &mut ViewContext<Self>,
     ) -> StorybookCard {
-        let this = cx.view().clone();
+        let _this = cx.view().clone();
         let status = Self::extension_status(&extension.id, cx);
 
-        let extension_id = extension.id.clone();
+        let _extension_id = extension.id.clone();
         let (install_or_uninstall_button, upgrade_button) =
             self.buttons_for_entry(extension, &status, cx);
         let repository_url = extension.manifest.repository.clone();
@@ -479,24 +476,22 @@ impl ExtensionsPage {
                         )
                     }))
                     .child(
-                        h_flex()
-                            .gap_2()
-                            .child(
-                                IconButton::new(
-                                    SharedString::from(format!("repository-{}", extension.id)),
-                                    IconName::Github,
-                                )
-                                .icon_color(Color::Accent)
-                                .icon_size(IconSize::Small)
-                                .style(ButtonStyle::Filled)
-                                .on_click(cx.listener({
-                                    let repository_url = repository_url.clone();
-                                    move |_, _, cx| {
-                                        cx.open_url(&repository_url);
-                                    }
-                                }))
-                                .tooltip(move |cx| Tooltip::text(repository_url.clone(), cx)),
+                        h_flex().gap_2().child(
+                            IconButton::new(
+                                SharedString::from(format!("repository-{}", extension.id)),
+                                IconName::Github,
                             )
+                            .icon_color(Color::Accent)
+                            .icon_size(IconSize::Small)
+                            .style(ButtonStyle::Filled)
+                            .on_click(cx.listener({
+                                let repository_url = repository_url.clone();
+                                move |_, _, cx| {
+                                    cx.open_url(&repository_url);
+                                }
+                            }))
+                            .tooltip(move |cx| Tooltip::text(repository_url.clone(), cx)),
+                        ),
                     ),
             )
     }
