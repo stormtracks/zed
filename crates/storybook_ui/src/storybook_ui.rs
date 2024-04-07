@@ -28,12 +28,12 @@ use workspace::{
     Workspace, WorkspaceId,
 };
 
-actions!(zed, [Extensions, InstallDevExtension]);
+actions!(zed, [Storybook, InstallDevExtension]);
 
 pub fn init(cx: &mut AppContext) {
     cx.observe_new_views(move |workspace: &mut Workspace, cx| {
         workspace
-            .register_action(move |workspace, _: &Extensions, cx| {
+            .register_action(move |workspace, _: &Storybook, cx| {
                 let existing = workspace
                     .active_pane()
                     .read(cx)

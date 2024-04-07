@@ -24,7 +24,7 @@ pub fn app_menus() -> Vec<Menu<'static>> {
                     ],
                 }),
                 MenuItem::action("Extensions", extensions_ui::Extensions),
-                MenuItem::action("Storybook UI", storybook_ui::Extensions),
+                MenuItem::action("Storybook", storybook_ui::Storybook),
                 MenuItem::action("Install CLI", install_cli::Install),
                 MenuItem::separator(),
                 MenuItem::action("Hide Zed", super::Hide),
