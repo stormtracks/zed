@@ -815,7 +815,7 @@ impl Render for ExtensionsPage {
                             .w_full()
                             .gap_2()
                             .justify_between()
-                            .child(Headline::new("Extensions").size(HeadlineSize::XLarge))
+                            .child(Headline::new("Storybook").size(HeadlineSize::XLarge))
                             .child(
                                 Button::new("install-dev-extension", "Install Dev Extension")
                                     .style(ButtonStyle::Filled)

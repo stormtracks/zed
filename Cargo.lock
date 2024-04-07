@@ -12460,6 +12460,7 @@ dependencies = [
  "settings",
  "simplelog",
  "smol",
+ "storybook_ui",
  "tab_switcher",
  "task",
  "tasks_ui",
