@@ -70,8 +70,6 @@ use zed::{
 static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
-    println!("Hello Michael, world!");
-
     menu::init();
     zed_actions::init();
 
@@ -85,8 +83,6 @@ fn main() {
     */
 
     log::info!("========== starting zed ==========");
-
-    println!("Hello Iris, world!");
 
     let app = App::new().with_assets(Assets);
 
@@ -527,6 +523,13 @@ fn init_paths() {
 }
 
 fn init_logger() {
+    /*
+    let level = "zed::Debug".parse().unwrap_or(LevelFilter::Info);
+    let level = std::env::var("ZED_LOG")
+        .ok()
+        .and_then(|level| level.parse().ok())
+        .unwrap_or(level);
+    */
     let level = LevelFilter::Info;
 
     // Prevent log file from becoming too large.
@@ -546,7 +549,7 @@ fn init_logger() {
             let config = ConfigBuilder::new()
                 .set_time_format_str("%T")
                 .set_time_to_local(true)
-                .set_location_level(LevelFilter::Info)
+                .set_location_level(level)
                 .build();
 
             simplelog::WriteLogger::init(level, config, log_file)

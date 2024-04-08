@@ -244,7 +244,7 @@ impl LanguageServer {
             root_path.parent().unwrap_or_else(|| Path::new("/"))
         };
 
-        log::info!(
+        log::debug!(
             "starting language server. binary path: {:?}, working directory: {:?}, args: {:?}",
             binary.path,
             working_dir,
@@ -278,7 +278,7 @@ impl LanguageServer {
             code_action_kinds,
             cx,
             move |notification| {
-                log::info!(
+                log::debug!(
                     "Language server with id {} sent unhandled notification {}:\n{}",
                     server_id,
                     notification.method,
@@ -744,7 +744,7 @@ impl LanguageServer {
                         }
 
                         _ = timer => {
-                            log::info!("timeout waiting for language server {name} to shutdown");
+                            log::debug!("timeout waiting for language server {name} to shutdown");
                         },
                     }
 
@@ -1264,7 +1264,7 @@ impl FakeLanguageServer {
             if method == T::METHOD {
                 return Some(serde_json::from_str::<T::Params>(&params).unwrap());
             } else {
-                log::info!("skipping message in fake language server {:?}", params);
+                log::debug!("skipping message in fake language server {:?}", params);
             }
         }
     }
