@@ -71,17 +71,24 @@ use zed::{
 static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
+    println!("Hello Michael, world!");
+
     menu::init();
     zed_actions::init();
 
     init_paths();
     init_logger();
 
+    /*
     if ensure_only_instance() != IsOnlyInstance::Yes {
         return;
     }
+    */
 
     log::info!("========== starting zed ==========");
+
+    println!("Hello Iris, world!");
+
     let app = App::new().with_assets(Assets);
 
     let (installation_id, existing_installation_id_found) = app
@@ -521,41 +528,37 @@ fn init_paths() {
 }
 
 fn init_logger() {
-    if stdout_is_a_pty() {
-        init_stdout_logger();
-    } else {
-        let level = LevelFilter::Info;
+    let level = LevelFilter::Info;
 
-        // Prevent log file from becoming too large.
-        const KIB: u64 = 1024;
-        const MIB: u64 = 1024 * KIB;
-        const MAX_LOG_BYTES: u64 = MIB;
-        if std::fs::metadata(&*paths::LOG).map_or(false, |metadata| metadata.len() > MAX_LOG_BYTES)
-        {
-            let _ = std::fs::rename(&*paths::LOG, &*paths::OLD_LOG);
+    // Prevent log file from becoming too large.
+    const KIB: u64 = 1024;
+    const MIB: u64 = 1024 * KIB;
+    const MAX_LOG_BYTES: u64 = MIB;
+    if std::fs::metadata(&*paths::LOG).map_or(false, |metadata| metadata.len() > MAX_LOG_BYTES) {
+        let _ = std::fs::rename(&*paths::LOG, &*paths::OLD_LOG);
+    }
+
+    match OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&*paths::LOG)
+    {
+        Ok(log_file) => {
+            let config = ConfigBuilder::new()
+                .set_time_format_str("%T")
+                .set_time_to_local(true)
+                .set_location_level(LevelFilter::Info)
+                .build();
+
+            simplelog::WriteLogger::init(level, config, log_file)
+                .expect("could not initialize logger");
         }
-
-        match OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&*paths::LOG)
-        {
-            Ok(log_file) => {
-                let config = ConfigBuilder::new()
-                    .set_time_format_str("%Y-%m-%dT%T%:z")
-                    .set_time_to_local(true)
-                    .build();
-
-                simplelog::WriteLogger::init(level, config, log_file)
-                    .expect("could not initialize logger");
-            }
-            Err(err) => {
-                init_stdout_logger();
-                log::error!(
-                    "could not open log file, defaulting to stdout logging: {}",
-                    err
-                );
-            }
+        Err(err) => {
+            init_stdout_logger();
+            log::error!(
+                "could not open log file, defaulting to stdout logging: {}",
+                err
+            );
         }
     }
 }
