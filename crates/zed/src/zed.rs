@@ -1,5 +1,4 @@
 mod app_menus;
-mod only_instance;
 mod open_listener;
 
 pub use app_menus::*;
@@ -12,7 +11,6 @@ use gpui::{
     actions, point, px, AppContext, AsyncAppContext, Context, FocusableView, PromptLevel,
     TitlebarOptions, View, ViewContext, VisualContext, WindowKind, WindowOptions,
 };
-pub use only_instance::*;
 pub use open_listener::*;
 
 use anyhow::Context as _;
