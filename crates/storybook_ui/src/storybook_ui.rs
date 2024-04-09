@@ -257,6 +257,9 @@ impl StorybookPage {
             };
 
             let fetch_result = remote_extensions.await;
+            //log::info!("fetch_result {:?}", fetch_result);
+            log::info!("dev_extensions {:?}", dev_extensions.len());
+
             this.update(&mut cx, |this, cx| {
                 cx.notify();
                 this.dev_extension_entries = dev_extensions;

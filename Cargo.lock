@@ -9195,6 +9195,7 @@ dependencies = [
  "fuzzy",
  "gpui",
  "language",
+ "log",
  "picker",
  "project",
  "semantic_version",
