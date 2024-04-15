@@ -295,15 +295,8 @@ impl ExtensionsPage {
         };
         range
             .map(|ix| {
-                if ix < dev_extension_entries_len {
-                    let extension = &self.dev_extension_entries[ix];
-                    self.render_dev_extension(extension, cx)
-                } else {
-                    let extension_ix =
-                        self.filtered_remote_extension_indices[ix - dev_extension_entries_len];
-                    let extension = &self.remote_extension_entries[extension_ix];
-                    self.render_remote_extension(extension, cx)
-                }
+                let extension = &self.dev_extension_entries[ix];
+                self.render_dev_extension(extension, cx)
             })
             .collect()
     }
@@ -880,10 +873,7 @@ impl Render for ExtensionsPage {
                     ),
             )
             .child(v_flex().px_4().size_full().overflow_y_hidden().map(|this| {
-                let mut count = self.filtered_remote_extension_indices.len();
-                if self.filter.include_dev_extensions() {
-                    count += self.dev_extension_entries.len();
-                }
+                let mut count = self.dev_extension_entries.len();
 
                 if count == 0 {
                     return this.py_4().child(self.render_empty_state(cx));
