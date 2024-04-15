@@ -1,6 +1,6 @@
 mod components;
 mod extension_suggest;
-mod extension_version_selector;
+//mod extension_version_selector;
 
 use crate::components::ExtensionCard;
 /*
