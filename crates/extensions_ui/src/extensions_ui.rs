@@ -8,7 +8,7 @@ use crate::extension_version_selector::{
     ExtensionVersionSelector, ExtensionVersionSelectorDelegate,
 };
 */
-use client::telemetry::Telemetry;
+//use client::telemetry::Telemetry;
 use client::ExtensionMetadata;
 use editor::{Editor, EditorElement, EditorStyle};
 use extension::{ExtensionManifest, ExtensionOperation, ExtensionStore};
@@ -110,9 +110,9 @@ impl ExtensionFilter {
 }
 
 pub struct ExtensionsPage {
-    workspace: WeakView<Workspace>,
+    //workspace: WeakView<Workspace>,
     list: UniformListScrollHandle,
-    telemetry: Arc<Telemetry>,
+    //telemetry: Arc<Telemetry>,
     is_fetching_extensions: bool,
     filter: ExtensionFilter,
     remote_extension_entries: Vec<ExtensionMetadata>,
@@ -148,9 +148,9 @@ impl ExtensionsPage {
             cx.subscribe(&query_editor, Self::on_query_change).detach();
 
             let mut this = Self {
-                workspace: workspace.weak_handle(),
+                //workspace: workspace.weak_handle(),
                 list: UniformListScrollHandle::new(),
-                telemetry: workspace.client().telemetry().clone(),
+                //telemetry: workspace.client().telemetry().clone(),
                 is_fetching_extensions: false,
                 filter: ExtensionFilter::All,
                 dev_extension_entries: Vec::new(),
