@@ -320,6 +320,8 @@ impl<D: PickerDelegate> Picker<D> {
         event: &editor::EditorEvent,
         cx: &mut ViewContext<Self>,
     ) {
+        let now = std::time::SystemTime::now();
+        println!("picker.rs: on_input_editor_event {:?}", now);
         let Head::Editor(ref editor) = &self.head else {
             panic!("unexpected call");
         };

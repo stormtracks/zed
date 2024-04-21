@@ -4418,6 +4418,7 @@ impl Editor {
     }
 
     pub fn backspace(&mut self, _: &Backspace, cx: &mut ViewContext<Self>) {
+        println!("editor.rs: backspace");
         self.transact(cx, |this, cx| {
             this.select_autoclose_pair(cx);
             let mut selections = this.selections.all::<Point>(cx);

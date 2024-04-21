@@ -133,6 +133,7 @@ impl EditorElement {
     }
 
     fn register_actions(&self, cx: &mut WindowContext) {
+        //println!("editor element.rs register_actions");
         let view = &self.editor;
         view.update(cx, |editor, cx| {
             for action in editor.editor_actions.iter() {
