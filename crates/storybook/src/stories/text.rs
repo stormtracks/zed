@@ -30,7 +30,7 @@ impl Render for TextStory {
                 )
                 .child(
                     StoryItem::new("Wrapping Text",
-                        div().max_w_96()
+                        div().max_w_96().bg(gpui::blue())
                             .child(
                                 concat!(
                                     "The quick brown fox jumps over the lazy dog. ",
@@ -49,7 +49,7 @@ impl Render for TextStory {
                 )
                 .child(
                     StoryItem::new("tbd",
-                    div().flex().w_96().child(div().overflow_hidden().child(concat!(
+                    div().flex().w_96().bg(gpui::blue()).child(div().overflow_hidden().child(concat!(
                             "flex-row. width 96. overflow-hidden. The quick brown fox jumps over the lazy dog. ",
                             "Meanwhile, the lazy dog decided it was time for a change. ",
                             "He started daily workout routines, ate healthier and became the fastest dog in town.",
