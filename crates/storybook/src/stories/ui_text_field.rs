@@ -1,6 +1,6 @@
 use gpui::{div, IntoElement, ParentElement, Render, Styled, View, VisualContext, WindowContext};
 use indoc::indoc;
-use story::*;
+use story::{StoryContainer, StoryItem, StorySection};
 
 pub struct UiTextFieldStory;
 
