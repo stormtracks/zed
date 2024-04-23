@@ -6,6 +6,7 @@ mod overflow_scroll;
 mod picker;
 mod scroll;
 mod text;
+mod ui_text_field;
 mod viewport_units;
 
 pub use auto_height_editor::*;
@@ -16,4 +17,5 @@ pub use overflow_scroll::*;
 pub use picker::*;
 pub use scroll::*;
 pub use text::*;
+pub use ui_text_field::*;
 pub use viewport_units::*;

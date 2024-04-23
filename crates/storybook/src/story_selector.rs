@@ -35,6 +35,7 @@ pub enum ComponentStory {
     TitleBar,
     ToggleButton,
     Text,
+    UiTextField,
     ViewportUnits,
     Picker,
 }
@@ -63,6 +64,7 @@ impl ComponentStory {
             Self::OverflowScroll => cx.new_view(|_| crate::stories::OverflowScrollStory).into(),
             Self::Scroll => ScrollStory::view(cx).into(),
             Self::Text => TextStory::view(cx).into(),
+            Self::UiTextField => UiTextFieldStory::view(cx).into(),
             Self::Tab => cx.new_view(|_| ui::TabStory).into(),
             Self::TabBar => cx.new_view(|_| ui::TabBarStory).into(),
             Self::TitleBar => cx.new_view(|_| ui::TitleBarStory).into(),
