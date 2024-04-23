@@ -38,7 +38,7 @@ impl StoryColor {
             secondary: hsla(216. / 360., 11. / 100., 16. / 100., 1.),
             border: hsla(216. / 360., 11. / 100., 91. / 100., 1.),
             background: hsla(0.1, 0.3, 0.1, 1.),
-            card_background: hsla(0. / 360., 0. / 100., 96. / 100., 1.),
+            card_background: hsla(0., 0., 0., 1.),
             divider: hsla(216. / 360., 11. / 100., 86. / 100., 1.),
             link: hsla(206. / 360., 1., 50. / 100., 1.),
         }
