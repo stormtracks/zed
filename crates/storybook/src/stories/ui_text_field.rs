@@ -1,7 +1,4 @@
-use gpui::{
-    div, green, red, HighlightStyle, InteractiveText, IntoElement, ParentElement, Render, Styled,
-    StyledText, View, VisualContext, WindowContext,
-};
+use gpui::{div, IntoElement, ParentElement, Render, Styled, View, VisualContext, WindowContext};
 use indoc::indoc;
 use story::*;
 
@@ -14,7 +11,7 @@ impl UiTextFieldStory {
 }
 
 impl Render for UiTextFieldStory {
-    fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
         StoryContainer::new(
             "UiTextField Story",
             "crates/storybook/src/stories/ui_text_field.rs",
