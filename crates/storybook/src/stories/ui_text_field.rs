@@ -18,9 +18,7 @@ impl Render for UiTextFieldStory {
         )
         .children(
         vec![
-
         StorySection::new()
-
         .child(
             StoryItem::new("Default",
                 div().bg(gpui::blue()).child("Hello World!")).usage(
