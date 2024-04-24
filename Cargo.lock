@@ -391,6 +391,7 @@ dependencies = [
  "node_runtime",
  "open_ai",
  "project",
+ "rand 0.8.5",
  "release_channel",
  "rich_text",
  "schemars",
@@ -12606,7 +12607,7 @@ dependencies = [
 
 [[package]]
 name = "zed"
-version = "0.133.0"
+version = "0.134.0"
 dependencies = [
  "activity_indicator",
  "anyhow",
@@ -12857,7 +12858,7 @@ dependencies = [
 
 [[package]]
 name = "zed_terraform"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "zed_extension_api 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

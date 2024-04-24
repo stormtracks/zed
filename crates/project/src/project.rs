@@ -3068,12 +3068,21 @@ impl Project {
 
         let enabled_language_servers =
             settings.customized_language_servers(&available_language_servers);
+        let enabled_lsp_adapters = available_lsp_adapters
+            .into_iter()
+            .filter(|adapter| enabled_language_servers.contains(&adapter.name))
+            .collect::<Vec<_>>();
 
-        for adapter in available_lsp_adapters {
-            if !enabled_language_servers.contains(&adapter.name) {
-                continue;
-            }
+        log::info!(
+            "starting language servers for {language}: {adapters}",
+            language = language.name(),
+            adapters = enabled_lsp_adapters
+                .iter()
+                .map(|adapter| adapter.name.0.as_ref())
+                .join(", ")
+        );
 
+        for adapter in enabled_lsp_adapters {
             self.start_language_server(worktree, adapter.clone(), language.clone(), cx);
         }
     }
@@ -4667,12 +4676,21 @@ impl Project {
 
         let mut project_transaction = ProjectTransaction::default();
         for (buffer, buffer_abs_path) in &buffers_with_paths {
-            let adapters_and_servers: Vec<_> = project.update(&mut cx, |project, cx| {
-                project
-                    .language_servers_for_buffer(&buffer.read(cx), cx)
-                    .map(|(adapter, lsp)| (adapter.clone(), lsp.clone()))
-                    .collect()
-            })?;
+            let (primary_adapter_and_server, adapters_and_servers) =
+                project.update(&mut cx, |project, cx| {
+                    let buffer = buffer.read(cx);
+
+                    let adapters_and_servers = project
+                        .language_servers_for_buffer(buffer, cx)
+                        .map(|(adapter, lsp)| (adapter.clone(), lsp.clone()))
+                        .collect::<Vec<_>>();
+
+                    let primary_adapter = project
+                        .primary_language_server_for_buffer(buffer, cx)
+                        .map(|(adapter, lsp)| (adapter.clone(), lsp.clone()));
+
+                    (primary_adapter, adapters_and_servers)
+                })?;
 
             let settings = buffer.update(&mut cx, |buffer, cx| {
                 language_settings(buffer.language(), buffer.file(), cx).clone()
@@ -4725,10 +4743,8 @@ impl Project {
             // Apply language-specific formatting using either the primary language server
             // or external command.
             // Except for code actions, which are applied with all connected language servers.
-            let primary_language_server = adapters_and_servers
-                .first()
-                .cloned()
-                .map(|(_, lsp)| lsp.clone());
+            let primary_language_server =
+                primary_adapter_and_server.map(|(_adapter, server)| server.clone());
             let server_and_buffer = primary_language_server
                 .as_ref()
                 .zip(buffer_abs_path.as_ref());
