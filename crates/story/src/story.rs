@@ -35,7 +35,7 @@ impl StoryColor {
     pub fn new() -> Self {
         Self {
             primary: hsla(206. / 360., 1., 50. / 100., 1.),
-            secondary: hsla(216. / 360., 11. / 100., 16. / 100., 1.),
+            secondary: hsla(300., 0.76, 0.72, 0.9),
             border: hsla(216. / 360., 11. / 100., 91. / 100., 1.),
             background: hsla(0.1, 0.3, 0.1, 1.),
             card_background: hsla(0., 0., 0., 1.),
