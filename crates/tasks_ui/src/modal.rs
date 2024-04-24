@@ -31,10 +31,11 @@ pub struct Spawn {
 }
 
 impl Spawn {
-    pub(crate) fn modal() -> Self {
+    pub fn modal() -> Self {
         Self { task_name: None }
     }
 }
+
 /// Rerun last task
 #[derive(PartialEq, Clone, Deserialize, Default)]
 pub struct Rerun {
@@ -329,6 +330,7 @@ impl PickerDelegate for TasksModalDelegate {
             text: hit.string.clone(),
             highlight_positions: hit.positions.clone(),
             char_count: hit.string.chars().count(),
+            color: Color::Default,
         };
         let icon = match source_kind {
             TaskSourceKind::UserInput => Some(Icon::new(IconName::Terminal)),

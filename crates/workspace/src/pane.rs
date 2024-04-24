@@ -193,7 +193,7 @@ pub struct Pane {
     last_focus_handle_by_item: HashMap<EntityId, WeakFocusHandle>,
     nav_history: NavHistory,
     toolbar: View<Toolbar>,
-    new_item_menu: Option<View<ContextMenu>>,
+    pub new_item_menu: Option<View<ContextMenu>>,
     split_item_menu: Option<View<ContextMenu>>,
     //     tab_context_menu: View<ContextMenu>,
     pub(crate) workspace: WeakView<Workspace>,
@@ -1747,7 +1747,7 @@ impl Pane {
             )
     }
 
-    fn render_menu_overlay(menu: &View<ContextMenu>) -> Div {
+    pub fn render_menu_overlay(menu: &View<ContextMenu>) -> Div {
         div().absolute().bottom_0().right_0().size_0().child(
             deferred(
                 anchored()
@@ -2928,6 +2928,6 @@ impl Render for DraggedTab {
             .selected(self.is_active)
             .child(label)
             .render(cx)
-            .font(ui_font)
+            .font_family(ui_font)
     }
 }
