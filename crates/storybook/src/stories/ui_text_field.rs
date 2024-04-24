@@ -30,6 +30,13 @@ impl Render for UiTextFieldStory {
             ),
         )
         .child(
+            StoryItem::new("Experimental ui_text_field",
+            div().flex().bg(gpui::blue()).child(div().overflow_hidden().child(concat!(
+                    "Meanwhile, the ui_text_field will go here.",
+                )))
+            )
+        )
+        .child(
             StoryItem::new("tbd",
             div().flex().w_96().bg(gpui::blue()).child(div().overflow_hidden().child(concat!(
                     "flex-row. width 96. overflow-hidden. The quick brown fox jumps over the lazy dog. ",
