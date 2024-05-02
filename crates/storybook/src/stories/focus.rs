@@ -2,7 +2,7 @@ use gpui::{
     actions, div, prelude::*, FocusHandle, Hsla, KeyBinding, Render, Subscription, View,
     WindowContext,
 };
-//use ui::prelude::*;
+use gpui::{black, blue, green, red, yellow};
 
 actions!(focus, [ActionA, ActionB, ActionC]);
 
@@ -58,62 +58,11 @@ impl FocusStory {
 
 impl Render for FocusStory {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
-        /// Pure black in [`Hsla`]
-        pub fn black() -> Hsla {
-            Hsla {
-                h: 0.,
-                s: 0.,
-                l: 0.,
-                a: 1.,
-            }
-        }
-
-        /// Pure white in [`Hsla`]
         pub fn purple() -> Hsla {
             Hsla {
                 h: 0.8,
                 s: 0.76,
                 l: 0.72,
-                a: 1.,
-            }
-        }
-
-        /// The color red in [`Hsla`]
-        pub fn red() -> Hsla {
-            Hsla {
-                h: 0.,
-                s: 1.,
-                l: 0.5,
-                a: 1.,
-            }
-        }
-
-        /// The color blue in [`Hsla`]
-        pub fn blue() -> Hsla {
-            Hsla {
-                h: 0.6,
-                s: 1.,
-                l: 0.5,
-                a: 1.,
-            }
-        }
-
-        /// The color green in [`Hsla`]
-        pub fn green() -> Hsla {
-            Hsla {
-                h: 0.33,
-                s: 1.,
-                l: 0.5,
-                a: 1.,
-            }
-        }
-
-        /// The color yellow in [`Hsla`]
-        pub fn yellow() -> Hsla {
-            Hsla {
-                h: 0.16,
-                s: 1.,
-                l: 0.5,
                 a: 1.,
             }
         }
