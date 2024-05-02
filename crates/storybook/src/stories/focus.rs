@@ -1,7 +1,8 @@
 use gpui::{
-    actions, div, prelude::*, FocusHandle, KeyBinding, Render, Subscription, View, WindowContext,
+    actions, div, prelude::*, FocusHandle, Hsla, KeyBinding, Render, Subscription, View,
+    WindowContext,
 };
-use ui::prelude::*;
+//use ui::prelude::*;
 
 actions!(focus, [ActionA, ActionB, ActionC]);
 
@@ -57,13 +58,72 @@ impl FocusStory {
 
 impl Render for FocusStory {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.theme();
-        let color_1 = theme.status().created;
-        let color_2 = theme.status().modified;
-        let color_4 = theme.status().conflict;
-        let color_5 = theme.status().ignored;
-        let color_6 = theme.status().renamed;
-        let color_7 = theme.status().hint;
+        /// Pure black in [`Hsla`]
+        pub fn black() -> Hsla {
+            Hsla {
+                h: 0.,
+                s: 0.,
+                l: 0.,
+                a: 1.,
+            }
+        }
+
+        /// Pure white in [`Hsla`]
+        pub fn purple() -> Hsla {
+            Hsla {
+                h: 0.8,
+                s: 0.76,
+                l: 0.72,
+                a: 1.,
+            }
+        }
+
+        /// The color red in [`Hsla`]
+        pub fn red() -> Hsla {
+            Hsla {
+                h: 0.,
+                s: 1.,
+                l: 0.5,
+                a: 1.,
+            }
+        }
+
+        /// The color blue in [`Hsla`]
+        pub fn blue() -> Hsla {
+            Hsla {
+                h: 0.6,
+                s: 1.,
+                l: 0.5,
+                a: 1.,
+            }
+        }
+
+        /// The color green in [`Hsla`]
+        pub fn green() -> Hsla {
+            Hsla {
+                h: 0.33,
+                s: 1.,
+                l: 0.5,
+                a: 1.,
+            }
+        }
+
+        /// The color yellow in [`Hsla`]
+        pub fn yellow() -> Hsla {
+            Hsla {
+                h: 0.16,
+                s: 1.,
+                l: 0.5,
+                a: 1.,
+            }
+        }
+
+        let color_1 = black();
+        let color_2 = purple();
+        let color_4 = red();
+        let color_5 = green();
+        let color_6 = blue();
+        let color_7 = yellow();
 
         div()
             .id("parent")
