@@ -1757,19 +1757,22 @@ impl Editor {
         self.completion_provider = Some(hub);
     }
 
-    pub fn set_inline_completion_provider(
+    pub fn set_inline_completion_provider<T>(
         &mut self,
-        provider: Model<impl InlineCompletionProvider>,
+        provider: Option<Model<T>>,
         cx: &mut ViewContext<Self>,
-    ) {
-        self.inline_completion_provider = Some(RegisteredInlineCompletionProvider {
-            _subscription: cx.observe(&provider, |this, _, cx| {
-                if this.focus_handle.is_focused(cx) {
-                    this.update_visible_inline_completion(cx);
-                }
-            }),
-            provider: Arc::new(provider),
-        });
+    ) where
+        T: InlineCompletionProvider,
+    {
+        self.inline_completion_provider =
+            provider.map(|provider| RegisteredInlineCompletionProvider {
+                _subscription: cx.observe(&provider, |this, _, cx| {
+                    if this.focus_handle.is_focused(cx) {
+                        this.update_visible_inline_completion(cx);
+                    }
+                }),
+                provider: Arc::new(provider),
+            });
         self.refresh_inline_completion(false, cx);
     }
 
@@ -2676,7 +2679,7 @@ impl Editor {
             }
 
             drop(snapshot);
-            let had_active_copilot_completion = this.has_active_inline_completion(cx);
+            let had_active_inline_completion = this.has_active_inline_completion(cx);
             this.change_selections(Some(Autoscroll::fit()), cx, |s| s.select(new_selections));
 
             if brace_inserted {
@@ -2692,7 +2695,7 @@ impl Editor {
                 }
             }
 
-            if had_active_copilot_completion {
+            if had_active_inline_completion {
                 this.refresh_inline_completion(true, cx);
                 if !this.has_active_inline_completion(cx) {
                     this.trigger_completion_on_input(&text, cx);
@@ -2765,7 +2768,7 @@ impl Editor {
                         indent.len = cmp::min(indent.len, start_point.column);
                         let start = selection.start;
                         let end = selection.end;
-                        let is_cursor = start == end;
+                        let selection_is_empty = start == end;
                         let language_scope = buffer.language_scope_at(start);
                         let (comment_delimiter, insert_extra_newline) = if let Some(language) =
                             &language_scope
@@ -2799,13 +2802,18 @@ impl Editor {
                                             pair_start,
                                         )
                                 });
+
                             // Comment extension on newline is allowed only for cursor selections
-                            let comment_delimiter = language.line_comment_prefixes().filter(|_| {
-                                let is_comment_extension_enabled =
-                                    multi_buffer.settings_at(0, cx).extend_comment_on_newline;
-                                is_cursor && is_comment_extension_enabled
-                            });
-                            let get_comment_delimiter = |delimiters: &[Arc<str>]| {
+                            let comment_delimiter = maybe!({
+                                if !selection_is_empty {
+                                    return None;
+                                }
+
+                                if !multi_buffer.settings_at(0, cx).extend_comment_on_newline {
+                                    return None;
+                                }
+
+                                let delimiters = language.line_comment_prefixes();
                                 let max_len_of_delimiter =
                                     delimiters.iter().map(|delimiter| delimiter.len()).max()?;
                                 let (snapshot, range) =
@@ -2834,12 +2842,7 @@ impl Editor {
                                 } else {
                                     None
                                 }
-                            };
-                            let comment_delimiter = if let Some(delimiters) = comment_delimiter {
-                                get_comment_delimiter(delimiters)
-                            } else {
-                                None
-                            };
+                            });
                             (comment_delimiter, insert_extra_newline)
                         } else {
                             (None, false)
@@ -4005,7 +4008,7 @@ impl Editor {
         if !self.show_inline_completions
             || !provider.is_enabled(&buffer, cursor_buffer_position, cx)
         {
-            self.clear_inline_completion(cx);
+            self.discard_inline_completion(cx);
             return None;
         }
 
@@ -4204,13 +4207,6 @@ impl Editor {
             }
         }
 
-        self.discard_inline_completion(cx);
-    }
-
-    fn clear_inline_completion(&mut self, cx: &mut ViewContext<Self>) {
-        if let Some(old_completion) = self.active_inline_completion.take() {
-            self.splice_inlays(vec![old_completion.id], Vec::new(), cx);
-        }
         self.discard_inline_completion(cx);
     }
 
@@ -7185,10 +7181,8 @@ impl Editor {
                 }
 
                 // If the language has line comments, toggle those.
-                if let Some(full_comment_prefixes) = language
-                    .line_comment_prefixes()
-                    .filter(|prefixes| !prefixes.is_empty())
-                {
+                let full_comment_prefixes = language.line_comment_prefixes();
+                if !full_comment_prefixes.is_empty() {
                     let first_prefix = full_comment_prefixes
                         .first()
                         .expect("prefixes is non-empty");
@@ -9947,12 +9941,14 @@ impl Editor {
             .raw_user_settings()
             .get("vim_mode")
             == Some(&serde_json::Value::Bool(true));
-        let copilot_enabled = all_language_settings(file, cx).copilot_enabled(None, None);
+
+        let copilot_enabled = all_language_settings(file, cx).inline_completions.provider
+            == language::language_settings::InlineCompletionProvider::Copilot;
         let copilot_enabled_for_language = self
             .buffer
             .read(cx)
             .settings_at(0, cx)
-            .show_copilot_suggestions;
+            .show_inline_completions;
 
         let telemetry = project.read(cx).client().telemetry().clone();
         telemetry.report_editor_event(
