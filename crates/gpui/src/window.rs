@@ -2963,6 +2963,7 @@ impl<'a> WindowContext<'a> {
     }
 
     fn dispatch_key_event(&mut self, event: &dyn Any) {
+        println!("dispatch_key_event {:?}", std::time::SystemTime::now());
         if self.window.dirty.get() {
             self.draw();
         }
