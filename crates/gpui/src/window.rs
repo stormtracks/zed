@@ -2904,6 +2904,12 @@ impl<'a> WindowContext<'a> {
             self.dispatch_key_event(any_key_event);
         }
 
+        /*
+        println!("{:?}",std::time::SystemTime::now());
+        println!("DispatchEventResult - propagate: {:?}", self.app.propagate_event);
+        println!("DispatchEventResult - default_prevented: {:?}", self.window.default_prevented);
+        */
+
         DispatchEventResult {
             propagate: self.app.propagate_event,
             default_prevented: self.window.default_prevented,
