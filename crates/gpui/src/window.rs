@@ -3173,6 +3173,7 @@ impl<'a> WindowContext<'a> {
             .dispatch_tree
             .dispatch_path(node_id);
 
+        println!("dispatch_action_on_node: {:?}", action);
         // Capture phase for global actions.
         self.propagate_event = true;
         if let Some(mut global_listeners) = self
