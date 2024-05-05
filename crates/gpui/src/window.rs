@@ -2979,11 +2979,15 @@ impl<'a> WindowContext<'a> {
             })
             .unwrap_or_else(|| self.window.rendered_frame.dispatch_tree.root_node_id());
 
+        println!("node_id {:?}", node_id);
+
         let dispatch_path = self
             .window
             .rendered_frame
             .dispatch_tree
             .dispatch_path(node_id);
+
+        println!("dispatch_path {:?}", dispatch_path);
 
         if let Some(key_down_event) = event.downcast_ref::<KeyDownEvent>() {
             let KeymatchResult { bindings, pending } = self
