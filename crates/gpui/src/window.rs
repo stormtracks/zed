@@ -2817,6 +2817,7 @@ impl<'a> WindowContext<'a> {
     /// Dispatch a mouse or keyboard event on the window.
     #[profiling::function]
     pub fn dispatch_event(&mut self, event: PlatformInput) -> DispatchEventResult {
+        //println!("dispatch_event {:?}", event);
         self.window.last_input_timestamp.set(Instant::now());
         // Handlers may set this to false by calling `stop_propagation`.
         self.app.propagate_event = true;
