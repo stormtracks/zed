@@ -1493,6 +1493,7 @@ impl<'a> WindowContext<'a> {
             .dispatch_tree
             .dispatch_path(node_id);
 
+        println!("dispatch_action_on_node: {:?}", dispatch_path);
         // Capture phase
         for node_id in &dispatch_path {
             let node = self.window.rendered_frame.dispatch_tree.node(*node_id);
