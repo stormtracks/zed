@@ -1376,6 +1376,7 @@ impl<'a> WindowContext<'a> {
 
             self.propagate_event = true;
             for binding in bindings {
+                println!("Dispatching action {:?}", binding.action);
                 self.dispatch_action_on_node(node_id, binding.action.boxed_clone());
                 if !self.propagate_event {
                     self.dispatch_keystroke_observers(event, Some(binding.action));
