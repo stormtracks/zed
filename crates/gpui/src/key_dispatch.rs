@@ -340,11 +340,14 @@ impl DispatchTree {
             let node = self.node(*node_id);
 
             if let Some(context) = node.context.clone() {
+                println!("Pushing context: {:?}", context);
                 context_stack.push(context);
             }
         }
 
+        println!("context_stack len : {:?}", context_stack.len());
         while !context_stack.is_empty() {
+            println!("Inside the dispatch_key loop");
             let keystroke_matcher = self
                 .keystroke_matchers
                 .entry(context_stack.clone())
