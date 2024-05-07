@@ -1325,13 +1325,17 @@ impl<'a> WindowContext<'a> {
             .dispatch_tree
             .dispatch_path(node_id);
 
+        println!("Dispatch path: {:?}", dispatch_path);
         if let Some(key_down_event) = event.downcast_ref::<KeyDownEvent>() {
+            println!("Key down: {:?}", key_down_event.keystroke);
             let KeymatchResult { bindings, pending } = self
                 .window
                 .rendered_frame
                 .dispatch_tree
                 .dispatch_key(&key_down_event.keystroke, &dispatch_path);
 
+            println!("Bindings: {:?}", bindings);
+            println!("Pending: {:?}", pending);
             if pending {
                 let mut currently_pending = self.window.pending_input.take().unwrap_or_default();
                 if currently_pending.focus.is_some() && currently_pending.focus != self.window.focus
