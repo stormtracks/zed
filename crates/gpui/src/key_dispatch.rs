@@ -461,6 +461,7 @@ impl DispatchTree {
         let (suffix, mut to_replay) = self.replay_prefix(input, dispatch_path);
 
         let mut result = self.dispatch_key(suffix, keystroke, dispatch_path);
+        println!("dispatch_key {:?}", result);
         to_replay.extend(result.to_replay);
         result.to_replay = to_replay;
         return result;
