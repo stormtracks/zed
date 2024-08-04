@@ -134,6 +134,7 @@ pub(crate) struct DispatchActionListener {
 
 impl DispatchTree {
     pub fn new(keymap: Rc<RefCell<Keymap>>, action_registry: Rc<ActionRegistry>) -> Self {
+        println!("DispatchTree::new");
         Self {
             node_stack: Vec::new(),
             context_stack: Vec::new(),
