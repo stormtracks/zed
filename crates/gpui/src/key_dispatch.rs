@@ -440,6 +440,7 @@ impl DispatchTree {
         keystroke: Keystroke,
         dispatch_path: &SmallVec<[DispatchNodeId; 32]>,
     ) -> DispatchResult {
+        println!("dispatch_key {:?}", keystroke);
         input.push(keystroke.clone());
         let (bindings, pending) = self.bindings_for_input(&input, dispatch_path);
 
