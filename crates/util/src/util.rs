@@ -567,6 +567,7 @@ impl<T: Rng> Iterator for RandomCharIter<T> {
 
 /// Get an embedded file as a string.
 pub fn asset_str<A: rust_embed::RustEmbed>(path: &str) -> Cow<'static, str> {
+    println!("Getting asset: {}", path);
     match A::get(path).unwrap().data {
         Cow::Borrowed(bytes) => Cow::Borrowed(std::str::from_utf8(bytes).unwrap()),
         Cow::Owned(bytes) => Cow::Owned(String::from_utf8(bytes).unwrap()),
