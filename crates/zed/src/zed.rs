@@ -524,7 +524,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
     .detach();
 }
 
-fn initialize_pane(workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewContext<Workspace>) {
+fn initialize_pane(_workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewContext<Workspace>) {
     pane.update(cx, |pane, cx| {
         pane.toolbar().update(cx, |toolbar, cx| {
             let multibuffer_hint = cx.new_view(|_| MultibufferHint::new());
