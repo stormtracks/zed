@@ -90,42 +90,9 @@ fn fail_to_open_window(e: anyhow::Error, _cx: &mut AppContext) {
     {
         process::exit(1);
     }
-
-    #[cfg(target_os = "linux")]
-    {
-        use ashpd::desktop::notification::{Notification, NotificationProxy, Priority};
-        _cx.spawn(|_cx| async move {
-            let Ok(proxy) = NotificationProxy::new().await else {
-                process::exit(1);
-            };
-
-            let notification_id = "dev.zed.Oops";
-            proxy
-                .add_notification(
-                    notification_id,
-                    Notification::new("Zed failed to launch")
-                        .body(Some(
-                            format!(
-                                "{e:?}. See https://zed.dev/docs/linux for troubleshooting steps."
-                            )
-                            .as_str(),
-                        ))
-                        .priority(Priority::High)
-                        .icon(ashpd::desktop::Icon::with_names(&[
-                            "dialog-question-symbolic",
-                        ])),
-                )
-                .await
-                .ok();
-
-            process::exit(1);
-        })
-        .detach();
-    }
 }
 
 enum AppMode {
-    //Headless(DevServerToken),
     Ui,
 }
 impl Global for AppMode {}
@@ -306,17 +273,6 @@ fn main() {
         session.id().to_owned(),
     );
 
-    //    let (open_listener, mut open_rx) = OpenListener::new();
-
-    #[cfg(target_os = "linux")]
-    {
-        if env::var("ZED_STATELESS").is_err() {
-            if crate::zed::listen_for_cli_connections(open_listener.clone()).is_err() {
-                println!("zed is already running");
-                return;
-            }
-        }
-    }
     #[cfg(not(target_os = "linux"))]
     {
         use zed::only_instance::*;
@@ -360,12 +316,6 @@ fn main() {
         })
     };
 
-    /*
-    app.on_open_urls({
-        let open_listener = open_listener.clone();
-        move |urls| open_listener.open_urls(urls)
-    });
-    */
     app.on_reopen(move |cx| {
         if let Some(app_state) = AppState::try_global(cx).and_then(|app_state| app_state.upgrade())
         {
