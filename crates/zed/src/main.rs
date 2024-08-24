@@ -11,7 +11,7 @@ use assistant::PromptBuilder;
 use chrono::Offset;
 use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
-use client::{Client, DevServerToken, UserStore};
+use client::{Client, UserStore};
 use db::kvp::KEY_VALUE_STORE;
 use editor::Editor;
 use env_logger::Builder;
@@ -125,7 +125,7 @@ fn fail_to_open_window(e: anyhow::Error, _cx: &mut AppContext) {
 }
 
 enum AppMode {
-    Headless(DevServerToken),
+    //Headless(DevServerToken),
     Ui,
 }
 impl Global for AppMode {}
@@ -180,12 +180,6 @@ fn init_ui(
     cx: &mut AppContext,
 ) -> Result<()> {
     match cx.try_global::<AppMode>() {
-        Some(AppMode::Headless(_)) => {
-            return Err(anyhow!(
-                "zed is already running in headless mode. Use `kill {}` to stop it",
-                process::id()
-            ))
-        }
         Some(AppMode::Ui) => return Ok(()),
         None => {
             cx.set_global(AppMode::Ui);
