@@ -1,10 +1,6 @@
 mod app_menus;
-//pub mod inline_completion_registry;
-#[cfg(target_os = "linux")]
-pub(crate) mod linux_prompts;
 #[cfg(not(target_os = "linux"))]
 pub(crate) mod only_instance;
-//mod open_listener;
 
 pub use app_menus::*;
 use breadcrumbs::Breadcrumbs;
