@@ -365,10 +365,6 @@ fn main() {
         Task::ready(())
     } else {
         app.background_executor().spawn(async {
-            #[cfg(unix)]
-            {
-                load_shell_from_passwd().await.log_err();
-            }
             load_login_shell_environment().await.log_err();
         })
     };
@@ -404,8 +400,6 @@ fn main() {
 
         GitHostingProviderRegistry::set_global(git_hosting_provider_registry, cx);
         git_hosting_providers::init(cx);
-
-        //OpenListener::set_global(cx, open_listener.clone());
 
         settings::init(cx);
         handle_settings_file_changes(user_settings_file_rx, cx, handle_settings_changed);
@@ -475,21 +469,6 @@ fn main() {
             }
         })
         .detach();
-        /*
-                let app_state = app_state.clone();
-                let prompt_builder = prompt_builder.clone();
-                cx.spawn(move |cx| async move {
-                    while let Some(urls) = open_rx.next().await {
-                        cx.update(|cx| {
-                            if let Some(request) = OpenRequest::parse(urls, cx).log_err() {
-                                handle_open_request(request, app_state.clone(), prompt_builder.clone(), cx);
-                            }
-                        })
-                        .ok();
-                    }
-                })
-                .detach();
-        */
     });
 }
 
@@ -543,118 +522,6 @@ fn handle_settings_changed(error: Option<anyhow::Error>, cx: &mut AppContext) {
     }
 }
 
-/*
-fn handle_open_request(
-    request: OpenRequest,
-    app_state: Arc<AppState>,
-    prompt_builder: Arc<PromptBuilder>,
-    cx: &mut AppContext,
-) {
-    if let Some(connection) = request.cli_connection {
-        let app_state = app_state.clone();
-        cx.spawn(move |cx| handle_cli_connection(connection, app_state, prompt_builder, cx))
-            .detach();
-        return;
-    }
-
-    if let Err(e) = init_ui(app_state.clone(), prompt_builder, cx) {
-        fail_to_open_window(e, cx);
-        return;
-    };
-
-    if let Some(connection_info) = request.ssh_connection {
-        cx.spawn(|mut cx| async move {
-            open_ssh_project(
-                connection_info,
-                request.open_paths,
-                app_state,
-                workspace::OpenOptions::default(),
-                &mut cx,
-            )
-            .await
-        })
-        .detach_and_log_err(cx);
-        return;
-    }
-
-    let mut task = None;
-    if !request.open_paths.is_empty() {
-        let app_state = app_state.clone();
-        task = Some(cx.spawn(|mut cx| async move {
-            let (_window, results) = open_paths_with_positions(
-                &request.open_paths,
-                app_state,
-                workspace::OpenOptions::default(),
-                &mut cx,
-            )
-            .await?;
-            for result in results.into_iter().flatten() {
-                if let Err(err) = result {
-                    log::error!("Error opening path: {err}",);
-                }
-            }
-            anyhow::Ok(())
-        }));
-    }
-
-    if !request.open_channel_notes.is_empty() || request.join_channel.is_some() {
-        cx.spawn(|mut cx| async move {
-            let result = maybe!(async {
-                if let Some(task) = task {
-                    task.await?;
-                }
-                let client = app_state.client.clone();
-                // we continue even if authentication fails as join_channel/ open channel notes will
-                // show a visible error message.
-                authenticate(client, &cx).await.log_err();
-
-                if let Some(channel_id) = request.join_channel {
-                    cx.update(|cx| {
-                        workspace::join_channel(
-                            client::ChannelId(channel_id),
-                            app_state.clone(),
-                            None,
-                            cx,
-                        )
-                    })?
-                    .await?;
-                }
-
-                let workspace_window =
-                    workspace::get_any_active_workspace(app_state, cx.clone()).await?;
-                let workspace = workspace_window.root_view(&cx)?;
-
-                let mut promises = Vec::new();
-                for (channel_id, heading) in request.open_channel_notes {
-                    promises.push(cx.update_window(workspace_window.into(), |_, cx| {
-                        ChannelView::open(
-                            client::ChannelId(channel_id),
-                            heading,
-                            workspace.clone(),
-                            cx,
-                        )
-                        .log_err()
-                    })?)
-                }
-                future::join_all(promises).await;
-                anyhow::Ok(())
-            })
-            .await;
-            if let Err(err) = result {
-                fail_to_open_window_async(err, &mut cx);
-            }
-        })
-        .detach()
-    } else if let Some(task) = task {
-        cx.spawn(|mut cx| async move {
-            if let Err(err) = task.await {
-                fail_to_open_window_async(err, &mut cx);
-            }
-        })
-        .detach();
-    }
-}
-*/
 async fn authenticate(client: Arc<Client>, cx: &AsyncAppContext) -> Result<()> {
     if stdout_is_a_pty() {
         if *client::ZED_DEVELOPMENT_AUTH {
@@ -877,55 +744,6 @@ fn init_stdout_logger() {
             writeln!(buf, " {}", record.args())
         })
         .init();
-}
-
-#[cfg(unix)]
-async fn load_shell_from_passwd() -> Result<()> {
-    let buflen = match unsafe { libc::sysconf(libc::_SC_GETPW_R_SIZE_MAX) } {
-        n if n < 0 => 1024,
-        n => n as usize,
-    };
-    let mut buffer = Vec::with_capacity(buflen);
-
-    let mut pwd: std::mem::MaybeUninit<libc::passwd> = std::mem::MaybeUninit::uninit();
-    let mut result: *mut libc::passwd = std::ptr::null_mut();
-
-    let uid = unsafe { libc::getuid() };
-    let status = unsafe {
-        libc::getpwuid_r(
-            uid,
-            pwd.as_mut_ptr(),
-            buffer.as_mut_ptr() as *mut libc::c_char,
-            buflen,
-            &mut result,
-        )
-    };
-    let entry = unsafe { pwd.assume_init() };
-
-    anyhow::ensure!(
-        status == 0,
-        "call to getpwuid_r failed. uid: {}, status: {}",
-        uid,
-        status
-    );
-    anyhow::ensure!(!result.is_null(), "passwd entry for uid {} not found", uid);
-    anyhow::ensure!(
-        entry.pw_uid == uid,
-        "passwd entry has different uid ({}) than getuid ({}) returned",
-        entry.pw_uid,
-        uid,
-    );
-
-    let shell = unsafe { std::ffi::CStr::from_ptr(entry.pw_shell).to_str().unwrap() };
-    if env::var("SHELL").map_or(true, |shell_env| shell_env != shell) {
-        log::info!(
-            "updating SHELL environment variable to value from passwd entry: {:?}",
-            shell,
-        );
-        env::set_var("SHELL", shell);
-    }
-
-    Ok(())
 }
 
 async fn load_login_shell_environment() -> Result<()> {
