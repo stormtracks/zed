@@ -119,8 +119,6 @@ static ZED_WINDOW_POSITION: LazyLock<Option<Point<Pixels>>> = LazyLock::new(|| {
 #[derive(Clone, PartialEq)]
 pub struct RemoveWorktreeFromProject(pub WorktreeId);
 
-actions!(assistant, [ShowConfiguration]);
-
 actions!(
     workspace,
     [
@@ -155,6 +153,8 @@ actions!(
         Welcome,
     ]
 );
+
+actions!(assistant, [ShowConfiguration]);
 
 #[derive(Clone, PartialEq)]
 pub struct OpenPaths {

@@ -4,7 +4,6 @@ members = [
     "crates/activity_indicator",
     "crates/anthropic",
     "crates/assets",
-    "crates/assistant",
     "crates/assistant_slash_command",
     "crates/audio",
     "crates/auto_update",
@@ -14,7 +13,6 @@ members = [
     "crates/cli",
     "crates/client",
     "crates/clock",
-    "crates/collab",
     "crates/collab_ui",
     "crates/collections",
     "crates/command_palette",
@@ -77,7 +75,6 @@ members = [
     "crates/project_panel",
     "crates/project_symbols",
     "crates/proto",
-    "crates/quick_action_bar",
     "crates/recent_projects",
     "crates/refineable",
     "crates/refineable/derive_refineable",
@@ -178,7 +175,7 @@ activity_indicator = { path = "crates/activity_indicator" }
 ai = { path = "crates/ai" }
 anthropic = { path = "crates/anthropic" }
 assets = { path = "crates/assets" }
-assistant = { path = "crates/assistant" }
+#assistant = { path = "crates/assistant" }
 assistant_slash_command = { path = "crates/assistant_slash_command" }
 audio = { path = "crates/audio" }
 auto_update = { path = "crates/auto_update" }
@@ -188,7 +185,6 @@ channel = { path = "crates/channel" }
 cli = { path = "crates/cli" }
 client = { path = "crates/client" }
 clock = { path = "crates/clock" }
-collab = { path = "crates/collab" }
 collab_ui = { path = "crates/collab_ui" }
 collections = { path = "crates/collections" }
 command_palette = { path = "crates/command_palette" }
@@ -252,7 +248,6 @@ project = { path = "crates/project" }
 project_panel = { path = "crates/project_panel" }
 project_symbols = { path = "crates/project_symbols" }
 proto = { path = "crates/proto" }
-quick_action_bar = { path = "crates/quick_action_bar" }
 recent_projects = { path = "crates/recent_projects" }
 refineable = { path = "crates/refineable" }
 release_channel = { path = "crates/release_channel" }
