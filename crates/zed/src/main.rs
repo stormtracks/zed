@@ -11,17 +11,15 @@ use assistant::PromptBuilder;
 use chrono::Offset;
 use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
-use client::{parse_zed_link, Client, DevServerToken, UserStore};
-use collab_ui::channel_view::ChannelView;
+use client::{Client, DevServerToken, UserStore};
 use db::kvp::KEY_VALUE_STORE;
 use editor::Editor;
 use env_logger::Builder;
 use fs::{Fs, RealFs};
-use futures::{future, StreamExt};
+use futures::StreamExt;
 use git::GitHostingProviderRegistry;
 use gpui::{
-    Action, App, AppContext, AsyncAppContext, Context, DismissEvent, Global, Task,
-    UpdateGlobal as _, VisualContext,
+    Action, App, AppContext, AsyncAppContext, Context, DismissEvent, Global, Task, VisualContext,
 };
 use image_viewer;
 use language::LanguageRegistry;
@@ -30,7 +28,6 @@ use log::LevelFilter;
 use assets::Assets;
 use node_runtime::RealNodeRuntime;
 use parking_lot::Mutex;
-use recent_projects::open_ssh_project;
 use release_channel::{AppCommitSha, AppVersion};
 use session::{AppSession, Session};
 use settings::{handle_settings_file_changes, watch_config_file, Settings, SettingsStore};
@@ -46,7 +43,7 @@ use std::{
 };
 use theme::{ActiveTheme, SystemAppearance, ThemeRegistry, ThemeSettings};
 use time::UtcOffset;
-use util::{maybe, parse_env_output, ResultExt, TryFutureExt};
+use util::{parse_env_output, ResultExt};
 use uuid::Uuid;
 use welcome::{show_welcome_view, BaseKeymap, FIRST_OPEN};
 use workspace::{
@@ -452,13 +449,6 @@ fn main() {
         reliability::init(client.http_client(), installation_id, cx);
         let prompt_builder = init_common(app_state.clone(), cx);
 
-        let args = Args::parse();
-        let urls: Vec<_> = args
-            .paths_or_urls
-            .iter()
-            .filter_map(|arg| parse_url_arg(arg, cx).log_err())
-            .collect();
-
         init_ui(app_state.clone(), prompt_builder.clone(), cx).unwrap();
         cx.spawn({
             let app_state = app_state.clone();
@@ -816,24 +806,6 @@ struct Args {
     /// Instructs zed to run as a dev server on this machine. (not implemented)
     #[arg(long)]
     dev_server_token: Option<String>,
-}
-
-fn parse_url_arg(arg: &str, cx: &AppContext) -> Result<String> {
-    match std::fs::canonicalize(Path::new(&arg)) {
-        Ok(path) => Ok(format!("file://{}", path.to_string_lossy())),
-        Err(error) => {
-            if arg.starts_with("file://")
-                || arg.starts_with("zed-cli://")
-                || arg.starts_with("ssh://")
-            {
-                Ok(arg.into())
-            } else if let Some(_) = parse_zed_link(&arg, cx) {
-                Ok(arg.into())
-            } else {
-                Err(anyhow!("error parsing path argument: {}", error))
-            }
-        }
-    }
 }
 
 fn load_embedded_fonts(cx: &AppContext) {

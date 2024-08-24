@@ -14,7 +14,7 @@ use collections::VecDeque;
 use editor::{scroll::Autoscroll, Editor, MultiBuffer};
 use gpui::{
     actions, point, px, AppContext, AsyncAppContext, Context, FocusableView, MenuItem, PromptLevel,
-    ReadGlobal, TitlebarOptions, View, ViewContext, VisualContext, WindowKind, WindowOptions,
+    TitlebarOptions, View, ViewContext, VisualContext, WindowKind, WindowOptions,
 };
 //pub use open_listener::*;
 
@@ -49,7 +49,7 @@ use workspace::{
     open_new, AppState, NewFile, NewWindow, OpenLog, Toast, Workspace, WorkspaceSettings,
 };
 use workspace::{notifications::DetachAndPromptErr, Pane};
-use zed_actions::{OpenAccountSettings, OpenBrowser, OpenSettings, OpenZedUrl, Quit};
+use zed_actions::{OpenAccountSettings, OpenBrowser, OpenSettings, Quit};
 
 actions!(
     zed,
