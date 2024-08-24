@@ -98,54 +98,52 @@ enum AppMode {
 impl Global for AppMode {}
 
 // init_common is called for both headless and normal mode.
-fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) -> Arc<PromptBuilder> {
+fn init_common(_app_state: Arc<AppState>, cx: &mut AppContext) {
     SystemAppearance::init(cx);
     theme::init(theme::LoadThemes::All(Box::new(Assets)), cx);
     command_palette::init(cx);
-    let copilot_language_server_id = app_state.languages.next_language_server_id();
-    copilot::init(
-        copilot_language_server_id,
-        app_state.fs.clone(),
-        app_state.client.http_client(),
-        app_state.node_runtime.clone(),
-        cx,
-    );
-    supermaven::init(app_state.client.clone(), cx);
-    language_model::init(
-        app_state.user_store.clone(),
-        app_state.client.clone(),
-        app_state.fs.clone(),
-        cx,
-    );
-    snippet_provider::init(cx);
-    inline_completion_registry::init(app_state.client.telemetry().clone(), cx);
-    let prompt_builder = assistant::init(
-        app_state.fs.clone(),
-        app_state.client.clone(),
-        stdout_is_a_pty(),
-        cx,
-    );
-    repl::init(
-        app_state.fs.clone(),
-        app_state.client.telemetry().clone(),
-        cx,
-    );
-    extension::init(
-        app_state.fs.clone(),
-        app_state.client.clone(),
-        app_state.node_runtime.clone(),
-        app_state.languages.clone(),
-        ThemeRegistry::global(cx),
-        cx,
-    );
-    prompt_builder
+    /*
+        let copilot_language_server_id = app_state.languages.next_language_server_id();
+        copilot::init(
+            copilot_language_server_id,
+            app_state.fs.clone(),
+            app_state.client.http_client(),
+            app_state.node_runtime.clone(),
+            cx,
+        );
+        supermaven::init(app_state.client.clone(), cx);
+        language_model::init(
+            app_state.user_store.clone(),
+            app_state.client.clone(),
+            app_state.fs.clone(),
+            cx,
+        );
+        snippet_provider::init(cx);
+        inline_completion_registry::init(app_state.client.telemetry().clone(), cx);
+        let prompt_builder = assistant::init(
+            app_state.fs.clone(),
+            app_state.client.clone(),
+            stdout_is_a_pty(),
+            cx,
+        );
+        repl::init(
+            app_state.fs.clone(),
+            app_state.client.telemetry().clone(),
+            cx,
+        );
+        extension::init(
+            app_state.fs.clone(),
+            app_state.client.clone(),
+            app_state.node_runtime.clone(),
+            app_state.languages.clone(),
+            ThemeRegistry::global(cx),
+            cx,
+        );
+        prompt_builder
+    */
 }
 
-fn init_ui(
-    app_state: Arc<AppState>,
-    prompt_builder: Arc<PromptBuilder>,
-    cx: &mut AppContext,
-) -> Result<()> {
+fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     match cx.try_global::<AppMode>() {
         Some(AppMode::Ui) => return Ok(()),
         None => {
@@ -231,7 +229,7 @@ fn init_ui(
     watch_file_types(fs.clone(), cx);
 
     cx.set_menus(app_menus());
-    initialize_workspace(app_state.clone(), prompt_builder, cx);
+    initialize_workspace(app_state.clone(), cx);
 
     cx.activate(true);
 
@@ -391,9 +389,9 @@ fn main() {
 
         auto_update::init(client.http_client(), cx);
         reliability::init(client.http_client(), installation_id, cx);
-        let prompt_builder = init_common(app_state.clone(), cx);
+        init_common(app_state.clone(), cx);
 
-        init_ui(app_state.clone(), prompt_builder.clone(), cx).unwrap();
+        init_ui(app_state.clone(), cx).unwrap();
         cx.spawn({
             let app_state = app_state.clone();
             |mut cx| async move {

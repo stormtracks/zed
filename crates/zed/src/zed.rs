@@ -7,7 +7,6 @@ pub(crate) mod only_instance;
 //mod open_listener;
 
 pub use app_menus::*;
-use assistant::PromptBuilder;
 use breadcrumbs::Breadcrumbs;
 use client::ZED_URL_SCHEME;
 use collections::VecDeque;
@@ -120,11 +119,7 @@ pub fn build_window_options(display_uuid: Option<Uuid>, cx: &mut AppContext) -> 
     }
 }
 
-pub fn initialize_workspace(
-    app_state: Arc<AppState>,
-    prompt_builder: Arc<PromptBuilder>,
-    cx: &mut AppContext,
-) {
+pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
     cx.observe_new_views(move |workspace: &mut Workspace, cx| {
         let workspace_handle = cx.view().clone();
         let center_pane = workspace.active_pane().clone();
@@ -243,11 +238,7 @@ pub fn initialize_workspace(
             });
         }
 
-        let prompt_builder = prompt_builder.clone();
         cx.spawn(|workspace_handle, mut cx| async move {
-            let assistant_panel =
-                assistant::AssistantPanel::load(workspace_handle.clone(), prompt_builder, cx.clone());
-
             let project_panel = ProjectPanel::load(workspace_handle.clone(), cx.clone());
             let outline_panel = OutlinePanel::load(workspace_handle.clone(), cx.clone());
             let terminal_panel = TerminalPanel::load(workspace_handle.clone(), cx.clone());
@@ -264,7 +255,6 @@ pub fn initialize_workspace(
                 project_panel,
                 outline_panel,
                 terminal_panel,
-                assistant_panel,
                 channels_panel,
                 chat_panel,
                 notification_panel,
@@ -272,14 +262,12 @@ pub fn initialize_workspace(
                 project_panel,
                 outline_panel,
                 terminal_panel,
-                assistant_panel,
                 channels_panel,
                 chat_panel,
                 notification_panel,
             )?;
 
             workspace_handle.update(&mut cx, |workspace, cx| {
-                workspace.add_panel(assistant_panel, cx);
                 workspace.add_panel(project_panel, cx);
                 workspace.add_panel(outline_panel, cx);
                 workspace.add_panel(terminal_panel, cx);
@@ -3490,7 +3478,7 @@ mod tests {
                 cx,
             );
             tasks_ui::init(cx);
-            initialize_workspace(app_state.clone(), prompt_builder, cx);
+            initialize_workspace(app_state.clone(), cx);
             app_state
         })
     }
