@@ -3470,8 +3470,6 @@ mod tests {
                 app_state.fs.clone(),
                 cx,
             );
-            let prompt_builder =
-                assistant::init(app_state.fs.clone(), app_state.client.clone(), false, cx);
             repl::init(
                 app_state.fs.clone(),
                 app_state.client.telemetry().clone(),

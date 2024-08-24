@@ -7,7 +7,7 @@ mod reliability;
 mod zed;
 
 use anyhow::{anyhow, Context as _, Result};
-use assistant::PromptBuilder;
+
 use chrono::Offset;
 use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
@@ -51,8 +51,6 @@ use workspace::{
     AppState, WorkspaceSettings, WorkspaceStore,
 };
 use zed::{app_menus, build_window_options, handle_keymap_file_changes, initialize_workspace};
-
-use crate::zed::inline_completion_registry;
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
