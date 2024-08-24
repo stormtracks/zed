@@ -12,12 +12,11 @@ use chrono::Offset;
 use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
 use client::{parse_zed_link, Client, DevServerToken, UserStore};
-use collab_ui::channel_view::ChannelView;
 use db::kvp::KEY_VALUE_STORE;
 use editor::Editor;
 use env_logger::Builder;
 use fs::{Fs, RealFs};
-use futures::{future, StreamExt};
+use futures::StreamExt;
 use git::GitHostingProviderRegistry;
 use gpui::{
     Action, App, AppContext, AsyncAppContext, Context, DismissEvent, Global, Task,
@@ -46,7 +45,7 @@ use std::{
 };
 use theme::{ActiveTheme, SystemAppearance, ThemeRegistry, ThemeSettings};
 use time::UtcOffset;
-use util::{maybe, parse_env_output, ResultExt, TryFutureExt};
+use util::{maybe, parse_env_output, ResultExt};
 use uuid::Uuid;
 use welcome::{show_welcome_view, BaseKeymap, FIRST_OPEN};
 use workspace::{
@@ -262,7 +261,6 @@ fn init_ui(
     language_tools::init(cx);
     call::init(app_state.client.clone(), app_state.user_store.clone(), cx);
     notifications::init(app_state.client.clone(), app_state.user_store.clone(), cx);
-    collab_ui::init(&app_state, cx);
     feedback::init(cx);
     markdown_preview::init(cx);
     welcome::init(cx);
@@ -682,21 +680,23 @@ fn handle_open_request(
 
                 let workspace_window =
                     workspace::get_any_active_workspace(app_state, cx.clone()).await?;
-                let workspace = workspace_window.root_view(&cx)?;
+                let _workspace = workspace_window.root_view(&cx)?;
 
-                let mut promises = Vec::new();
-                for (channel_id, heading) in request.open_channel_notes {
-                    promises.push(cx.update_window(workspace_window.into(), |_, cx| {
-                        ChannelView::open(
-                            client::ChannelId(channel_id),
-                            heading,
-                            workspace.clone(),
-                            cx,
-                        )
-                        .log_err()
-                    })?)
-                }
-                future::join_all(promises).await;
+                //let mut promises = Vec::new();
+                /*
+                                for (channel_id, heading) in request.open_channel_notes {
+                                    promises.push(cx.update_window(workspace_window.into(), |_, cx| {
+                                        ChannelView::open(
+                                            client::ChannelId(channel_id),
+                                            heading,
+                                            workspace.clone(),
+                                            cx,
+                                        )
+                                        .log_err()
+                                    })?)
+                                }
+                */
+                //future::join_all(promises).await;
                 anyhow::Ok(())
             })
             .await;
