@@ -53,10 +53,7 @@ use workspace::{
     notifications::{simple_message_notification::MessageNotification, NotificationId},
     AppState, WorkspaceSettings, WorkspaceStore,
 };
-use zed::{
-    app_menus, build_window_options, handle_cli_connection, handle_keymap_file_changes,
-    initialize_workspace, open_paths_with_positions, OpenListener, OpenRequest,
-};
+use zed::{app_menus, build_window_options, handle_keymap_file_changes, initialize_workspace};
 
 use crate::zed::inline_completion_registry;
 
@@ -135,37 +132,6 @@ enum AppMode {
     Ui,
 }
 impl Global for AppMode {}
-
-fn init_headless(
-    dev_server_token: DevServerToken,
-    app_state: Arc<AppState>,
-    cx: &mut AppContext,
-) -> Task<Result<()>> {
-    match cx.try_global::<AppMode>() {
-        Some(AppMode::Headless(token)) if token == &dev_server_token => return Task::ready(Ok(())),
-        Some(_) => {
-            return Task::ready(Err(anyhow!(
-                "zed is already running. Use `kill {}` to stop it",
-                process::id()
-            )))
-        }
-        None => {
-            cx.set_global(AppMode::Headless(dev_server_token.clone()));
-        }
-    };
-    let client = app_state.client.clone();
-    client.set_dev_server_token(dev_server_token);
-    headless::init(
-        client.clone(),
-        headless::AppState {
-            languages: app_state.languages.clone(),
-            user_store: app_state.user_store.clone(),
-            fs: app_state.fs.clone(),
-            node_runtime: app_state.node_runtime.clone(),
-        },
-        cx,
-    )
-}
 
 // init_common is called for both headless and normal mode.
 fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) -> Arc<PromptBuilder> {
@@ -349,7 +315,7 @@ fn main() {
         session.id().to_owned(),
     );
 
-    let (open_listener, mut open_rx) = OpenListener::new();
+    //    let (open_listener, mut open_rx) = OpenListener::new();
 
     #[cfg(target_os = "linux")]
     {
@@ -407,10 +373,12 @@ fn main() {
         })
     };
 
+    /*
     app.on_open_urls({
         let open_listener = open_listener.clone();
         move |urls| open_listener.open_urls(urls)
     });
+    */
     app.on_reopen(move |cx| {
         if let Some(app_state) = AppState::try_global(cx).and_then(|app_state| app_state.upgrade())
         {
@@ -437,7 +405,7 @@ fn main() {
         GitHostingProviderRegistry::set_global(git_hosting_provider_registry, cx);
         git_hosting_providers::init(cx);
 
-        OpenListener::set_global(cx, open_listener.clone());
+        //OpenListener::set_global(cx, open_listener.clone());
 
         settings::init(cx);
         handle_settings_file_changes(user_settings_file_rx, cx, handle_settings_changed);
@@ -497,60 +465,31 @@ fn main() {
             .filter_map(|arg| parse_url_arg(arg, cx).log_err())
             .collect();
 
-        if !urls.is_empty() {
-            open_listener.open_urls(urls)
-        }
-
-        match open_rx
-            .try_next()
-            .ok()
-            .flatten()
-            .and_then(|urls| OpenRequest::parse(urls, cx).log_err())
-        {
-            Some(request) => {
-                handle_open_request(request, app_state.clone(), prompt_builder.clone(), cx);
-            }
-            None => {
-                if let Some(dev_server_token) = args.dev_server_token {
-                    let task =
-                        init_headless(DevServerToken(dev_server_token), app_state.clone(), cx);
-                    cx.spawn(|cx| async move {
-                        if let Err(e) = task.await {
-                            log::error!("{}", e);
-                            cx.update(|cx| cx.quit()).log_err();
-                        } else {
-                            log::info!("connected!");
-                        }
-                    })
-                    .detach();
-                } else {
-                    init_ui(app_state.clone(), prompt_builder.clone(), cx).unwrap();
-                    cx.spawn({
-                        let app_state = app_state.clone();
-                        |mut cx| async move {
-                            if let Err(e) = restore_or_create_workspace(app_state, &mut cx).await {
-                                fail_to_open_window_async(e, &mut cx)
-                            }
-                        }
-                    })
-                    .detach();
+        init_ui(app_state.clone(), prompt_builder.clone(), cx).unwrap();
+        cx.spawn({
+            let app_state = app_state.clone();
+            |mut cx| async move {
+                if let Err(e) = restore_or_create_workspace(app_state, &mut cx).await {
+                    fail_to_open_window_async(e, &mut cx)
                 }
-            }
-        }
-
-        let app_state = app_state.clone();
-        let prompt_builder = prompt_builder.clone();
-        cx.spawn(move |cx| async move {
-            while let Some(urls) = open_rx.next().await {
-                cx.update(|cx| {
-                    if let Some(request) = OpenRequest::parse(urls, cx).log_err() {
-                        handle_open_request(request, app_state.clone(), prompt_builder.clone(), cx);
-                    }
-                })
-                .ok();
             }
         })
         .detach();
+        /*
+                let app_state = app_state.clone();
+                let prompt_builder = prompt_builder.clone();
+                cx.spawn(move |cx| async move {
+                    while let Some(urls) = open_rx.next().await {
+                        cx.update(|cx| {
+                            if let Some(request) = OpenRequest::parse(urls, cx).log_err() {
+                                handle_open_request(request, app_state.clone(), prompt_builder.clone(), cx);
+                            }
+                        })
+                        .ok();
+                    }
+                })
+                .detach();
+        */
     });
 }
 
@@ -604,6 +543,7 @@ fn handle_settings_changed(error: Option<anyhow::Error>, cx: &mut AppContext) {
     }
 }
 
+/*
 fn handle_open_request(
     request: OpenRequest,
     app_state: Arc<AppState>,
@@ -714,7 +654,7 @@ fn handle_open_request(
         .detach();
     }
 }
-
+*/
 async fn authenticate(client: Arc<Client>, cx: &AsyncAppContext) -> Result<()> {
     if stdout_is_a_pty() {
         if *client::ZED_DEVELOPMENT_AUTH {
