@@ -132,10 +132,9 @@ impl Render for TitleBar {
                         h_flex()
                             .gap_1()
                             .children(match self.platform_style {
-                                PlatformStyle::Mac => None,
-                                PlatformStyle::Linux | PlatformStyle::Windows => {
-                                    Some(ApplicationMenu::new())
-                                }
+                                PlatformStyle::Mac
+                                | PlatformStyle::Linux
+                                | PlatformStyle::Windows => Some(ApplicationMenu::new()),
                             })
                             .children(self.render_project_host(cx))
                             .child(self.render_project_name(cx))
