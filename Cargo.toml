@@ -126,6 +126,7 @@ members = [
     "crates/worktree",
     "crates/zed",
     "crates/zed_actions",
+    "crates/zedxa",
 
     #
     # Extensions
@@ -168,7 +169,7 @@ members = [
 
     "tooling/xtask"
 ]
-default-members = ["crates/zed"]
+default-members = ["crates/zedxa"]
 
 [workspace.dependencies]
 #
