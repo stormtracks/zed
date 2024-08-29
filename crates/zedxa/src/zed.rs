@@ -11,13 +11,11 @@ use gpui::{
 };
 
 use anyhow::Context as _;
-use assets::Assets;
 use futures::{channel::mpsc, select_biased, StreamExt};
 use outline_panel::OutlinePanel;
 use project::TaskSourceKind;
 use project_panel::ProjectPanel;
 use release_channel::{AppCommitSha, ReleaseChannel};
-use rope::Rope;
 use search::project_search::ProjectSearchBar;
 use settings::{
     initial_local_settings_content, initial_tasks_content, watch_config_file, KeymapFile, Settings,
@@ -31,13 +29,13 @@ use workspace::CloseIntent;
 
 use paths::{local_settings_file_relative_path, local_tasks_file_relative_path};
 use terminal_view::terminal_panel::{self, TerminalPanel};
-use util::{asset_str, ResultExt};
+use util::ResultExt;
 use uuid::Uuid;
 use vim::VimModeSetting;
 use welcome::{BaseKeymap, MultibufferHint};
 use workspace::{
-    create_and_open_local_file, notifications::simple_message_notification::MessageNotification,
-    open_new, AppState, NewFile, NewWindow, OpenLog, Toast, Workspace, WorkspaceSettings,
+    notifications::simple_message_notification::MessageNotification, open_new, AppState, NewFile,
+    NewWindow, OpenLog, Toast, Workspace, WorkspaceSettings,
 };
 use workspace::{notifications::DetachAndPromptErr, Pane};
 use zed_actions::{OpenAccountSettings, OpenBrowser, OpenSettings, Quit};
@@ -121,34 +119,10 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
                 workspace::Event::PaneAdded(pane) => {
                     initialize_pane(workspace, pane, cx);
                 }
-                workspace::Event::OpenBundledFile {
-                    text,
-                    title,
-                    language,
-                } => open_bundled_file(workspace, text.clone(), title, language, cx),
                 _ => {}
             }
         })
         .detach();
-
-        #[cfg(target_os = "linux")]
-        if let Err(e) = fs::watcher::global(|_| {}) {
-            let message = format!(db::indoc!{r#"
-                inotify_init returned {}
-
-                This may be due to system-wide limits on inotify instances. For troubleshooting see: https://zed.dev/docs/linux
-                "#}, e);
-            let prompt = cx.prompt(PromptLevel::Critical, "Could not start inotify", Some(&message),
-                &["Troubleshoot and Quit"]);
-            cx.spawn(|_, mut cx| async move {
-                if prompt.await == Ok(0) {
-                    cx.update(|cx| {
-                        cx.open_url("https://zed.dev/docs/linux#could-not-start-inotify");
-                        cx.quit();
-                    }).ok();
-                }
-            }).detach()
-        }
 
         if let Some(specs) = cx.gpu_specs() {
             log::info!("Using GPU: {:?}", specs);
@@ -374,74 +348,14 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
             .register_action(|workspace, _: &OpenLog, cx| {
                 open_log_file(workspace, cx);
             })
-            .register_action(|workspace, _: &zed_actions::OpenLicenses, cx| {
-                open_bundled_file(
-                    workspace,
-                    asset_str::<Assets>("licenses.md"),
-                    "Open Source License Attribution",
-                    "Markdown",
-                    cx,
-                );
-            })
-            .register_action(
-                move |_: &mut Workspace,
-                      _: &zed_actions::OpenKeymap,
-                      cx: &mut ViewContext<Workspace>| {
-                    open_settings_file(&paths::keymap_file(), || settings::initial_keymap_content().as_ref().into(), cx);
-                },
-            )
-            .register_action(
-                move |_: &mut Workspace, _: &OpenSettings, cx: &mut ViewContext<Workspace>| {
-                    open_settings_file(
-                        paths::settings_file(),
-                        || settings::initial_user_settings_content().as_ref().into(),
-                        cx,
-                    );
-                },
-            )
             .register_action(
                 |_: &mut Workspace, _: &OpenAccountSettings, cx: &mut ViewContext<Workspace>| {
                     let server_url = &client::ClientSettings::get_global(cx).server_url;
                     cx.open_url(&format!("{server_url}/account"));
                 },
             )
-            .register_action(
-                move |_: &mut Workspace, _: &OpenTasks, cx: &mut ViewContext<Workspace>| {
-                    open_settings_file(
-                        paths::tasks_file(),
-                        || settings::initial_tasks_content().as_ref().into(),
-                        cx,
-                    );
-                },
-            )
             .register_action(open_local_settings_file)
             .register_action(open_local_tasks_file)
-            .register_action(
-                move |workspace: &mut Workspace,
-                      _: &OpenDefaultKeymap,
-                      cx: &mut ViewContext<Workspace>| {
-                    open_bundled_file(
-                        workspace,
-                        settings::default_keymap(),
-                        "Default Key Bindings",
-                        "JSON",
-                        cx,
-                    );
-                },
-            )
-            .register_action(
-                move |workspace: &mut Workspace,
-                      _: &OpenDefaultSettings,
-                      cx: &mut ViewContext<Workspace>| {
-                    open_bundled_file(
-                        workspace,
-                        settings::default_settings(),
-                        "Default Settings",
-                        "JSON",
-                        cx,
-                    );
-                },
-            )
             .register_action(
                 |workspace: &mut Workspace,
                  _: &project_panel::ToggleFocus,
@@ -868,69 +782,6 @@ fn open_local_file(
             cx.new_view(|_| MessageNotification::new("This project has no folders open."))
         })
     }
-}
-
-fn open_bundled_file(
-    workspace: &mut Workspace,
-    text: Cow<'static, str>,
-    title: &'static str,
-    language: &'static str,
-    cx: &mut ViewContext<Workspace>,
-) {
-    let language = workspace.app_state().languages.language_for_name(language);
-    cx.spawn(|workspace, mut cx| async move {
-        let language = language.await.log_err();
-        workspace
-            .update(&mut cx, |workspace, cx| {
-                workspace.with_local_workspace(cx, |workspace, cx| {
-                    let project = workspace.project();
-                    let buffer = project.update(cx, move |project, cx| {
-                        project.create_local_buffer(text.as_ref(), language, cx)
-                    });
-                    let buffer = cx.new_model(|cx| {
-                        MultiBuffer::singleton(buffer, cx).with_title(title.into())
-                    });
-                    workspace.add_item_to_active_pane(
-                        Box::new(cx.new_view(|cx| {
-                            let mut editor =
-                                Editor::for_multibuffer(buffer, Some(project.clone()), true, cx);
-                            editor.set_read_only(true);
-                            editor.set_breadcrumb_header(title.into());
-                            editor
-                        })),
-                        None,
-                        true,
-                        cx,
-                    );
-                })
-            })?
-            .await
-    })
-    .detach_and_log_err(cx);
-}
-
-fn open_settings_file(
-    abs_path: &'static Path,
-    default_content: impl FnOnce() -> Rope + Send + 'static,
-    cx: &mut ViewContext<Workspace>,
-) {
-    cx.spawn(|workspace, mut cx| async move {
-        let (worktree_creation_task, settings_open_task) =
-            workspace.update(&mut cx, |workspace, cx| {
-                let worktree_creation_task = workspace.project().update(cx, |project, cx| {
-                    // Set up a dedicated worktree for settings, since otherwise we're dropping and re-starting LSP servers for each file inside on every settings file close/open
-                    // TODO: Do note that all other external files (e.g. drag and drop from OS) still have their worktrees released on file close, causing LSP servers' restarts.
-                    project.find_or_create_worktree(paths::config_dir().as_path(), false, cx)
-                });
-                let settings_open_task = create_and_open_local_file(&abs_path, cx, default_content);
-                (worktree_creation_task, settings_open_task)
-            })?;
-
-        let _ = worktree_creation_task.await?;
-        let _ = settings_open_task.await?;
-        anyhow::Ok(())
-    })
-    .detach_and_log_err(cx);
 }
 
 async fn register_zed_scheme(cx: &AsyncAppContext) -> anyhow::Result<()> {
