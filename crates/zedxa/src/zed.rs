@@ -1,6 +1,4 @@
 mod app_menus;
-#[cfg(not(target_os = "linux"))]
-pub(crate) mod only_instance;
 mod open_listener;
 
 pub use app_menus::*;

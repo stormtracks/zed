@@ -347,14 +347,6 @@ fn main() {
             }
         }
     }
-    #[cfg(not(target_os = "linux"))]
-    {
-        use zed::only_instance::*;
-        if ensure_only_instance() != IsOnlyInstance::Yes {
-            println!("zed is already running");
-            return;
-        }
-    }
 
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
