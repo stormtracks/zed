@@ -193,6 +193,7 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
         app_state.client.telemetry().clone(),
         cx,
     );
+    /*
     extension::init(
         app_state.fs.clone(),
         app_state.client.clone(),
@@ -201,6 +202,7 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
         ThemeRegistry::global(cx),
         cx,
     );
+    */
 }
 
 fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
@@ -255,7 +257,7 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     markdown_preview::init(cx);
     welcome::init(cx);
     settings_ui::init(cx);
-    extensions_ui::init(cx);
+    //extensions_ui::init(cx);
     performance::init(cx);
 
     cx.observe_global::<SettingsStore>({
@@ -831,7 +833,7 @@ pub(crate) async fn restorable_workspace_locations(
 fn init_paths() -> anyhow::Result<()> {
     for path in [
         paths::config_dir(),
-        paths::extensions_dir(),
+        //paths::extensions_dir(),
         paths::languages_dir(),
         paths::database_dir(),
         paths::logs_dir(),
