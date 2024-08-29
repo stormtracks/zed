@@ -57,8 +57,6 @@ use zed::{
     initialize_workspace, open_paths_with_positions, OpenListener, OpenRequest,
 };
 
-use crate::zed::inline_completion_registry;
-
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -187,7 +185,6 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
         cx,
     );
     snippet_provider::init(cx);
-    inline_completion_registry::init(app_state.client.telemetry().clone(), cx);
     repl::init(
         app_state.fs.clone(),
         app_state.client.telemetry().clone(),
