@@ -23,7 +23,6 @@ use futures::{channel::mpsc, select_biased, StreamExt};
 use outline_panel::OutlinePanel;
 use project::TaskSourceKind;
 use project_panel::ProjectPanel;
-use quick_action_bar::QuickActionBar;
 use release_channel::{AppCommitSha, ReleaseChannel};
 use rope::Rope;
 use search::project_search::ProjectSearchBar;
@@ -531,7 +530,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
     .detach();
 }
 
-fn initialize_pane(workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewContext<Workspace>) {
+fn initialize_pane(_workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewContext<Workspace>) {
     pane.update(cx, |pane, cx| {
         pane.toolbar().update(cx, |toolbar, cx| {
             let multibuffer_hint = cx.new_view(|_| MultibufferHint::new());
@@ -540,10 +539,11 @@ fn initialize_pane(workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewCo
             toolbar.add_item(breadcrumbs, cx);
             let buffer_search_bar = cx.new_view(search::BufferSearchBar::new);
             toolbar.add_item(buffer_search_bar.clone(), cx);
-
+            /*
             let quick_action_bar =
                 cx.new_view(|cx| QuickActionBar::new(buffer_search_bar, workspace, cx));
             toolbar.add_item(quick_action_bar, cx);
+            */
             let diagnostic_editor_controls = cx.new_view(|_| diagnostics::ToolbarControls::new());
             toolbar.add_item(diagnostic_editor_controls, cx);
             let project_search_bar = cx.new_view(|_| ProjectSearchBar::new());
