@@ -10,7 +10,7 @@ use anyhow::{anyhow, Context as _, Result};
 use chrono::Offset;
 use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
-use client::{Client, DevServerToken, UserStore};
+use client::{Client, UserStore};
 use db::kvp::KEY_VALUE_STORE;
 use editor::Editor;
 use env_logger::Builder;
@@ -122,41 +122,9 @@ fn fail_to_open_window(e: anyhow::Error, _cx: &mut AppContext) {
 }
 
 enum AppMode {
-    Headless(DevServerToken),
     Ui,
 }
 impl Global for AppMode {}
-
-fn init_headless(
-    dev_server_token: DevServerToken,
-    app_state: Arc<AppState>,
-    cx: &mut AppContext,
-) -> Task<Result<()>> {
-    match cx.try_global::<AppMode>() {
-        Some(AppMode::Headless(token)) if token == &dev_server_token => return Task::ready(Ok(())),
-        Some(_) => {
-            return Task::ready(Err(anyhow!(
-                "zed is already running. Use `kill {}` to stop it",
-                process::id()
-            )))
-        }
-        None => {
-            cx.set_global(AppMode::Headless(dev_server_token.clone()));
-        }
-    };
-    let client = app_state.client.clone();
-    client.set_dev_server_token(dev_server_token);
-    headless::init(
-        client.clone(),
-        headless::AppState {
-            languages: app_state.languages.clone(),
-            user_store: app_state.user_store.clone(),
-            fs: app_state.fs.clone(),
-            node_runtime: app_state.node_runtime.clone(),
-        },
-        cx,
-    )
-}
 
 // init_common is called for both headless and normal mode.
 fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
@@ -198,12 +166,6 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
 
 fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     match cx.try_global::<AppMode>() {
-        Some(AppMode::Headless(_)) => {
-            return Err(anyhow!(
-                "zed is already running in headless mode. Use `kill {}` to stop it",
-                process::id()
-            ))
-        }
         Some(AppMode::Ui) => return Ok(()),
         None => {
             cx.set_global(AppMode::Ui);
@@ -441,31 +403,16 @@ fn main() {
         reliability::init(client.http_client(), installation_id, cx);
         init_common(app_state.clone(), cx);
 
-        let args = Args::parse();
-
-        if let Some(dev_server_token) = args.dev_server_token {
-            let task = init_headless(DevServerToken(dev_server_token), app_state.clone(), cx);
-            cx.spawn(|cx| async move {
-                if let Err(e) = task.await {
-                    log::error!("{}", e);
-                    cx.update(|cx| cx.quit()).log_err();
-                } else {
-                    log::info!("connected!");
+        init_ui(app_state.clone(), cx).unwrap();
+        cx.spawn({
+            let app_state = app_state.clone();
+            |mut cx| async move {
+                if let Err(e) = restore_or_create_workspace(app_state, &mut cx).await {
+                    fail_to_open_window_async(e, &mut cx)
                 }
-            })
-            .detach();
-        } else {
-            init_ui(app_state.clone(), cx).unwrap();
-            cx.spawn({
-                let app_state = app_state.clone();
-                |mut cx| async move {
-                    if let Err(e) = restore_or_create_workspace(app_state, &mut cx).await {
-                        fail_to_open_window_async(e, &mut cx)
-                    }
-                }
-            })
-            .detach();
-        }
+            }
+        })
+        .detach();
     });
 }
 
