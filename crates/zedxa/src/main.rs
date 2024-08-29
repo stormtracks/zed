@@ -131,15 +131,6 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
     SystemAppearance::init(cx);
     theme::init(theme::LoadThemes::All(Box::new(Assets)), cx);
     command_palette::init(cx);
-    let copilot_language_server_id = app_state.languages.next_language_server_id();
-    copilot::init(
-        copilot_language_server_id,
-        app_state.fs.clone(),
-        app_state.client.http_client(),
-        app_state.node_runtime.clone(),
-        cx,
-    );
-    supermaven::init(app_state.client.clone(), cx);
     language_model::init(
         app_state.user_store.clone(),
         app_state.client.clone(),
@@ -152,16 +143,6 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
         app_state.client.telemetry().clone(),
         cx,
     );
-    /*
-    extension::init(
-        app_state.fs.clone(),
-        app_state.client.clone(),
-        app_state.node_runtime.clone(),
-        app_state.languages.clone(),
-        ThemeRegistry::global(cx),
-        cx,
-    );
-    */
 }
 
 fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
@@ -173,9 +154,6 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     };
 
     load_embedded_fonts(cx);
-
-    #[cfg(target_os = "linux")]
-    crate::zed::linux_prompts::init(cx);
 
     app_state.languages.set_theme(cx.theme().clone());
     editor::init(cx);
