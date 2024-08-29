@@ -52,10 +52,7 @@ use workspace::{
     notifications::{simple_message_notification::MessageNotification, NotificationId},
     AppState, WorkspaceSettings, WorkspaceStore,
 };
-use zed::{
-    app_menus, build_window_options, handle_cli_connection, handle_keymap_file_changes,
-    initialize_workspace, open_paths_with_positions, OpenListener, OpenRequest,
-};
+use zed::{app_menus, build_window_options, handle_keymap_file_changes, initialize_workspace};
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -336,18 +333,6 @@ fn main() {
         session.id().to_owned(),
     );
 
-    let (open_listener, mut open_rx) = OpenListener::new();
-
-    #[cfg(target_os = "linux")]
-    {
-        if env::var("ZED_STATELESS").is_err() {
-            if crate::zed::listen_for_cli_connections(open_listener.clone()).is_err() {
-                println!("zed is already running");
-                return;
-            }
-        }
-    }
-
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
         if cfg!(target_os = "macos") && option_env!("ZED_BUNDLE").as_deref() == Some("true") {
@@ -385,11 +370,6 @@ fn main() {
             load_login_shell_environment().await.log_err();
         })
     };
-
-    app.on_open_urls({
-        let open_listener = open_listener.clone();
-        move |urls| open_listener.open_urls(urls)
-    });
     app.on_reopen(move |cx| {
         if let Some(app_state) = AppState::try_global(cx).and_then(|app_state| app_state.upgrade())
         {
@@ -415,8 +395,6 @@ fn main() {
 
         GitHostingProviderRegistry::set_global(git_hosting_provider_registry, cx);
         git_hosting_providers::init(cx);
-
-        OpenListener::set_global(cx, open_listener.clone());
 
         settings::init(cx);
         handle_settings_file_changes(user_settings_file_rx, cx, handle_settings_changed);
@@ -476,59 +454,29 @@ fn main() {
             .filter_map(|arg| parse_url_arg(arg, cx).log_err())
             .collect();
 
-        if !urls.is_empty() {
-            open_listener.open_urls(urls)
-        }
-
-        match open_rx
-            .try_next()
-            .ok()
-            .flatten()
-            .and_then(|urls| OpenRequest::parse(urls, cx).log_err())
-        {
-            Some(request) => {
-                handle_open_request(request, app_state.clone(), cx);
-            }
-            None => {
-                if let Some(dev_server_token) = args.dev_server_token {
-                    let task =
-                        init_headless(DevServerToken(dev_server_token), app_state.clone(), cx);
-                    cx.spawn(|cx| async move {
-                        if let Err(e) = task.await {
-                            log::error!("{}", e);
-                            cx.update(|cx| cx.quit()).log_err();
-                        } else {
-                            log::info!("connected!");
-                        }
-                    })
-                    .detach();
+        if let Some(dev_server_token) = args.dev_server_token {
+            let task = init_headless(DevServerToken(dev_server_token), app_state.clone(), cx);
+            cx.spawn(|cx| async move {
+                if let Err(e) = task.await {
+                    log::error!("{}", e);
+                    cx.update(|cx| cx.quit()).log_err();
                 } else {
-                    init_ui(app_state.clone(), cx).unwrap();
-                    cx.spawn({
-                        let app_state = app_state.clone();
-                        |mut cx| async move {
-                            if let Err(e) = restore_or_create_workspace(app_state, &mut cx).await {
-                                fail_to_open_window_async(e, &mut cx)
-                            }
-                        }
-                    })
-                    .detach();
+                    log::info!("connected!");
                 }
-            }
-        }
-
-        let app_state = app_state.clone();
-        cx.spawn(move |cx| async move {
-            while let Some(urls) = open_rx.next().await {
-                cx.update(|cx| {
-                    if let Some(request) = OpenRequest::parse(urls, cx).log_err() {
-                        handle_open_request(request, app_state.clone(), cx);
+            })
+            .detach();
+        } else {
+            init_ui(app_state.clone(), cx).unwrap();
+            cx.spawn({
+                let app_state = app_state.clone();
+                |mut cx| async move {
+                    if let Err(e) = restore_or_create_workspace(app_state, &mut cx).await {
+                        fail_to_open_window_async(e, &mut cx)
                     }
-                })
-                .ok();
-            }
-        })
-        .detach();
+                }
+            })
+            .detach();
+        }
     });
 }
 
@@ -579,112 +527,6 @@ fn handle_settings_changed(error: Option<anyhow::Error>, cx: &mut AppContext) {
                 None => workspace.dismiss_notification(&id, cx),
             })
             .log_err();
-    }
-}
-
-fn handle_open_request(request: OpenRequest, app_state: Arc<AppState>, cx: &mut AppContext) {
-    if let Some(connection) = request.cli_connection {
-        let app_state = app_state.clone();
-        cx.spawn(move |cx| handle_cli_connection(connection, app_state, cx))
-            .detach();
-        return;
-    }
-
-    if let Err(e) = init_ui(app_state.clone(), cx) {
-        fail_to_open_window(e, cx);
-        return;
-    };
-
-    if let Some(connection_info) = request.ssh_connection {
-        cx.spawn(|mut cx| async move {
-            open_ssh_project(
-                connection_info,
-                request.open_paths,
-                app_state,
-                workspace::OpenOptions::default(),
-                &mut cx,
-            )
-            .await
-        })
-        .detach_and_log_err(cx);
-        return;
-    }
-
-    let mut task = None;
-    if !request.open_paths.is_empty() {
-        let app_state = app_state.clone();
-        task = Some(cx.spawn(|mut cx| async move {
-            let (_window, results) = open_paths_with_positions(
-                &request.open_paths,
-                app_state,
-                workspace::OpenOptions::default(),
-                &mut cx,
-            )
-            .await?;
-            for result in results.into_iter().flatten() {
-                if let Err(err) = result {
-                    log::error!("Error opening path: {err}",);
-                }
-            }
-            anyhow::Ok(())
-        }));
-    }
-
-    if !request.open_channel_notes.is_empty() || request.join_channel.is_some() {
-        cx.spawn(|mut cx| async move {
-            let result = maybe!(async {
-                if let Some(task) = task {
-                    task.await?;
-                }
-                let client = app_state.client.clone();
-                // we continue even if authentication fails as join_channel/ open channel notes will
-                // show a visible error message.
-                authenticate(client, &cx).await.log_err();
-
-                if let Some(channel_id) = request.join_channel {
-                    cx.update(|cx| {
-                        workspace::join_channel(
-                            client::ChannelId(channel_id),
-                            app_state.clone(),
-                            None,
-                            cx,
-                        )
-                    })?
-                    .await?;
-                }
-
-                let workspace_window =
-                    workspace::get_any_active_workspace(app_state, cx.clone()).await?;
-                let workspace = workspace_window.root_view(&cx)?;
-
-                let mut promises = Vec::new();
-                for (channel_id, heading) in request.open_channel_notes {
-                    promises.push(cx.update_window(workspace_window.into(), |_, cx| {
-                        ChannelView::open(
-                            client::ChannelId(channel_id),
-                            heading,
-                            workspace.clone(),
-                            cx,
-                        )
-                        .log_err()
-                    })?)
-                }
-                future::join_all(promises).await;
-                anyhow::Ok(())
-            })
-            .await;
-            if let Err(err) = result {
-                fail_to_open_window_async(err, &mut cx);
-            }
-        })
-        .detach()
-    } else if let Some(task) = task {
-        cx.spawn(|mut cx| async move {
-            if let Err(err) = task.await {
-                fail_to_open_window_async(err, &mut cx);
-            }
-        })
-        .detach();
     }
 }
 

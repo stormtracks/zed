@@ -1,5 +1,4 @@
 mod app_menus;
-mod open_listener;
 
 pub use app_menus::*;
 use breadcrumbs::Breadcrumbs;
@@ -10,7 +9,6 @@ use gpui::{
     actions, point, px, AppContext, AsyncAppContext, Context, FocusableView, MenuItem, PromptLevel,
     ReadGlobal, TitlebarOptions, View, ViewContext, VisualContext, WindowKind, WindowOptions,
 };
-pub use open_listener::*;
 
 use anyhow::Context as _;
 use assets::Assets;
@@ -283,9 +281,6 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
             })
             .register_action(|_, _: &ToggleFullScreen, cx| {
                 cx.toggle_fullscreen();
-            })
-            .register_action(|_, action: &OpenZedUrl, cx| {
-                OpenListener::global(cx).open_urls(vec![action.url.clone()])
             })
             .register_action(|_, action: &OpenBrowser, cx| cx.open_url(&action.url))
             .register_action(move |_, _: &zed_actions::IncreaseBufferFontSize, cx| {
