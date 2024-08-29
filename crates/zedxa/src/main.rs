@@ -43,7 +43,7 @@ use theme::{ActiveTheme, SystemAppearance, ThemeRegistry, ThemeSettings};
 use time::UtcOffset;
 use util::{parse_env_output, ResultExt};
 use uuid::Uuid;
-use welcome::{show_welcome_view, BaseKeymap, FIRST_OPEN};
+use welcome::{show_welcome_view, FIRST_OPEN};
 use workspace::{
     notifications::{simple_message_notification::MessageNotification, NotificationId},
     AppState, WorkspaceSettings, WorkspaceStore,
@@ -215,11 +215,12 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
         }
     })
     .detach();
+    /*
     let telemetry = app_state.client.telemetry();
     telemetry.report_setting_event("theme", cx.theme().name.to_string());
     telemetry.report_setting_event("keymap", BaseKeymap::get_global(cx).to_string());
     telemetry.flush_events();
-
+    */
     let fs = app_state.fs.clone();
     load_user_themes_in_background(fs.clone(), cx);
     watch_themes(fs.clone(), cx);
