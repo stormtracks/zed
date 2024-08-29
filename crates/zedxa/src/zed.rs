@@ -384,13 +384,6 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
                 );
             })
             .register_action(
-                move |workspace: &mut Workspace,
-                      _: &zed_actions::OpenTelemetryLog,
-                      cx: &mut ViewContext<Workspace>| {
-                    open_telemetry_log_file(workspace, cx);
-                },
-            )
-            .register_action(
                 move |_: &mut Workspace,
                       _: &zed_actions::OpenKeymap,
                       cx: &mut ViewContext<Workspace>| {
@@ -875,55 +868,6 @@ fn open_local_file(
             cx.new_view(|_| MessageNotification::new("This project has no folders open."))
         })
     }
-}
-
-fn open_telemetry_log_file(workspace: &mut Workspace, cx: &mut ViewContext<Workspace>) {
-    workspace.with_local_workspace(cx, move |workspace, cx| {
-        let app_state = workspace.app_state().clone();
-        cx.spawn(|workspace, mut cx| async move {
-            async fn fetch_log_string(app_state: &Arc<AppState>) -> Option<String> {
-                let path = app_state.client.telemetry().log_file_path()?;
-                app_state.fs.load(&path).await.log_err()
-            }
-
-            let log = fetch_log_string(&app_state).await.unwrap_or_else(|| "// No data has been collected yet".to_string());
-
-            const MAX_TELEMETRY_LOG_LEN: usize = 5 * 1024 * 1024;
-            let mut start_offset = log.len().saturating_sub(MAX_TELEMETRY_LOG_LEN);
-            if let Some(newline_offset) = log[start_offset..].find('\n') {
-                start_offset += newline_offset + 1;
-            }
-            let log_suffix = &log[start_offset..];
-            let header = concat!(
-                "// Zed collects anonymous usage data to help us understand how people are using the app.\n",
-                "// Telemetry can be disabled via the `settings.json` file.\n",
-                "// Here is the data that has been reported for the current session:\n",
-            );
-            let content = format!("{}\n{}", header, log_suffix);
-            let json = app_state.languages.language_for_name("JSON").await.log_err();
-
-            workspace.update(&mut cx, |workspace, cx| {
-                let project = workspace.project().clone();
-                let buffer = project.update(cx, |project, cx| project.create_local_buffer(&content, json, cx));
-                let buffer = cx.new_model(|cx| {
-                    MultiBuffer::singleton(buffer, cx).with_title("Telemetry Log".into())
-                });
-                workspace.add_item_to_active_pane(
-                    Box::new(cx.new_view(|cx| {
-                        let mut editor = Editor::for_multibuffer(buffer, Some(project), true, cx);
-                        editor.set_breadcrumb_header("Telemetry Log".into());
-                        editor
-                    })),
-                    None,
-                    true,
-                    cx,
-                );
-            }).log_err()?;
-
-            Some(())
-        })
-        .detach();
-    }).detach();
 }
 
 fn open_bundled_file(
