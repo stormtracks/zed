@@ -85,38 +85,6 @@ fn fail_to_open_window(e: anyhow::Error, _cx: &mut AppContext) {
     {
         process::exit(1);
     }
-
-    #[cfg(target_os = "linux")]
-    {
-        use ashpd::desktop::notification::{Notification, NotificationProxy, Priority};
-        _cx.spawn(|_cx| async move {
-            let Ok(proxy) = NotificationProxy::new().await else {
-                process::exit(1);
-            };
-
-            let notification_id = "dev.zed.Oops";
-            proxy
-                .add_notification(
-                    notification_id,
-                    Notification::new("Zed failed to launch")
-                        .body(Some(
-                            format!(
-                                "{e:?}. See https://zed.dev/docs/linux for troubleshooting steps."
-                            )
-                            .as_str(),
-                        ))
-                        .priority(Priority::High)
-                        .icon(ashpd::desktop::Icon::with_names(&[
-                            "dialog-question-symbolic",
-                        ])),
-                )
-                .await
-                .ok();
-
-            process::exit(1);
-        })
-        .detach();
-    }
 }
 
 enum AppMode {
@@ -155,17 +123,14 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
 
     app_state.languages.set_theme(cx.theme().clone());
     editor::init(cx);
-    //image_viewer::init(cx);
     diagnostics::init(cx);
 
-    //audio::init(Assets, cx);
     workspace::init(app_state.clone(), cx);
 
     recent_projects::init(cx);
     go_to_line::init(cx);
     file_finder::init(cx);
     tab_switcher::init(cx);
-    //dev_server_projects::init(app_state.client.clone(), cx);
     outline::init(cx);
     project_symbols::init(cx);
     project_panel::init(Assets, cx);
@@ -181,12 +146,10 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     language_tools::init(cx);
     call::init(app_state.client.clone(), app_state.user_store.clone(), cx);
     notifications::init(app_state.client.clone(), app_state.user_store.clone(), cx);
-    //collab_ui::init(&app_state, cx);
     feedback::init(cx);
     markdown_preview::init(cx);
     welcome::init(cx);
     settings_ui::init(cx);
-    //extensions_ui::init(cx);
     performance::init(cx);
 
     cx.observe_global::<SettingsStore>({
@@ -214,12 +177,6 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
         }
     })
     .detach();
-    /*
-    let telemetry = app_state.client.telemetry();
-    telemetry.report_setting_event("theme", cx.theme().name.to_string());
-    telemetry.report_setting_event("keymap", BaseKeymap::get_global(cx).to_string());
-    telemetry.flush_events();
-    */
     let fs = app_state.fs.clone();
     load_user_themes_in_background(fs.clone(), cx);
     watch_themes(fs.clone(), cx);
@@ -343,17 +300,6 @@ fn main() {
         project::Project::init(&client, cx);
         client::init(&client, cx);
         language::init(cx);
-        /*
-        let telemetry = client.telemetry();
-        telemetry.start(installation_id.clone(), session.id().to_owned(), cx);
-        telemetry.report_app_event(
-            match existing_installation_id_found {
-                Some(false) => "first open",
-                _ => "open",
-            }
-            .to_string(),
-        );
-        */
         let app_session = cx.new_model(|cx| AppSession::new(session, cx));
 
         let app_state = Arc::new(AppState {
@@ -368,7 +314,6 @@ fn main() {
         });
         AppState::set_global(Arc::downgrade(&app_state), cx);
 
-        //auto_update::init(client.http_client(), cx);
         reliability::init(client.http_client(), cx);
         init_common(app_state.clone(), cx);
 
