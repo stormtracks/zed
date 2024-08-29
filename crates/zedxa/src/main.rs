@@ -20,7 +20,6 @@ use git::GitHostingProviderRegistry;
 use gpui::{
     Action, App, AppContext, AsyncAppContext, Context, DismissEvent, Global, Task, VisualContext,
 };
-use image_viewer;
 use language::LanguageRegistry;
 use log::LevelFilter;
 
@@ -157,17 +156,17 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
 
     app_state.languages.set_theme(cx.theme().clone());
     editor::init(cx);
-    image_viewer::init(cx);
+    //image_viewer::init(cx);
     diagnostics::init(cx);
 
-    audio::init(Assets, cx);
+    //audio::init(Assets, cx);
     workspace::init(app_state.clone(), cx);
 
     recent_projects::init(cx);
     go_to_line::init(cx);
     file_finder::init(cx);
     tab_switcher::init(cx);
-    dev_server_projects::init(app_state.client.clone(), cx);
+    //dev_server_projects::init(app_state.client.clone(), cx);
     outline::init(cx);
     project_symbols::init(cx);
     project_panel::init(Assets, cx);
