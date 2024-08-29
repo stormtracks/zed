@@ -292,9 +292,6 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
 
     cx.activate(true);
 
-    cx.spawn(|cx| async move { authenticate(app_state.client.clone(), &cx).await })
-        .detach_and_log_err(cx);
-
     Ok(())
 }
 
@@ -520,19 +517,6 @@ fn handle_settings_changed(error: Option<anyhow::Error>, cx: &mut AppContext) {
             })
             .log_err();
     }
-}
-
-async fn authenticate(client: Arc<Client>, cx: &AsyncAppContext) -> Result<()> {
-    if stdout_is_a_pty() {
-        if *client::ZED_DEVELOPMENT_AUTH {
-            client.authenticate_and_connect(true, &cx).await?;
-        } else if client::IMPERSONATE_LOGIN.is_some() {
-            client.authenticate_and_connect(false, &cx).await?;
-        }
-    } else if client.has_credentials(&cx).await {
-        client.authenticate_and_connect(true, &cx).await?;
-    }
-    Ok::<_, anyhow::Error>(())
 }
 
 async fn installation_id() -> Result<(String, bool)> {
