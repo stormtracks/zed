@@ -42,7 +42,6 @@ use std::{
 use theme::{ActiveTheme, SystemAppearance, ThemeRegistry, ThemeSettings};
 use time::UtcOffset;
 use util::{parse_env_output, ResultExt};
-use uuid::Uuid;
 use welcome::{show_welcome_view, FIRST_OPEN};
 use workspace::{
     notifications::{simple_message_notification::MessageNotification, NotificationId},
@@ -252,20 +251,10 @@ fn main() {
         .with_assets(Assets)
         .measure_time_to_first_window_draw(start_time);
 
-    let (installation_id, existing_installation_id_found) = app
-        .background_executor()
-        .block(installation_id())
-        .ok()
-        .unzip();
-
     let session = app.background_executor().block(Session::new());
 
     let app_version = AppVersion::init(env!("CARGO_PKG_VERSION"));
-    reliability::init_panic_hook(
-        installation_id.clone(),
-        app_version,
-        session.id().to_owned(),
-    );
+    reliability::init_panic_hook(app_version, session.id().to_owned());
 
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
@@ -354,6 +343,7 @@ fn main() {
         project::Project::init(&client, cx);
         client::init(&client, cx);
         language::init(cx);
+        /*
         let telemetry = client.telemetry();
         telemetry.start(installation_id.clone(), session.id().to_owned(), cx);
         telemetry.report_app_event(
@@ -363,6 +353,7 @@ fn main() {
             }
             .to_string(),
         );
+        */
         let app_session = cx.new_model(|cx| AppSession::new(session, cx));
 
         let app_state = Arc::new(AppState {
@@ -378,7 +369,7 @@ fn main() {
         AppState::set_global(Arc::downgrade(&app_state), cx);
 
         //auto_update::init(client.http_client(), cx);
-        reliability::init(client.http_client(), installation_id, cx);
+        reliability::init(client.http_client(), cx);
         init_common(app_state.clone(), cx);
 
         init_ui(app_state.clone(), cx).unwrap();
@@ -442,32 +433,6 @@ fn handle_settings_changed(error: Option<anyhow::Error>, cx: &mut AppContext) {
             })
             .log_err();
     }
-}
-
-async fn installation_id() -> Result<(String, bool)> {
-    let legacy_key_name = "device_id".to_string();
-    let key_name = "installation_id".to_string();
-
-    // Migrate legacy key to new key
-    if let Ok(Some(installation_id)) = KEY_VALUE_STORE.read_kvp(&legacy_key_name) {
-        KEY_VALUE_STORE
-            .write_kvp(key_name, installation_id.clone())
-            .await?;
-        KEY_VALUE_STORE.delete_kvp(legacy_key_name).await?;
-        return Ok((installation_id, true));
-    }
-
-    if let Ok(Some(installation_id)) = KEY_VALUE_STORE.read_kvp(&key_name) {
-        return Ok((installation_id, true));
-    }
-
-    let installation_id = Uuid::new_v4().to_string();
-
-    KEY_VALUE_STORE
-        .write_kvp(key_name, installation_id.clone())
-        .await?;
-
-    Ok((installation_id, false))
 }
 
 async fn restore_or_create_workspace(

@@ -25,11 +25,7 @@ use util::ResultExt;
 use crate::stdout_is_a_pty;
 static PANIC_COUNT: AtomicU32 = AtomicU32::new(0);
 
-pub fn init_panic_hook(
-    installation_id: Option<String>,
-    app_version: SemanticVersion,
-    session_id: String,
-) {
+pub fn init_panic_hook(app_version: SemanticVersion, session_id: String) {
     let is_pty = stdout_is_a_pty();
 
     panic::set_hook(Box::new(move |info| {
@@ -96,7 +92,7 @@ pub fn init_panic_hook(
             architecture: env::consts::ARCH.into(),
             panicked_on: Utc::now().timestamp_millis(),
             backtrace,
-            installation_id: installation_id.clone(),
+            installation_id: Some(String::from("storm Installation Id")),
             session_id: session_id.clone(),
         };
 
@@ -124,23 +120,15 @@ pub fn init_panic_hook(
     }));
 }
 
-pub fn init(
-    http_client: Arc<HttpClientWithUrl>,
-    installation_id: Option<String>,
-    cx: &mut AppContext,
-) {
+pub fn init(http_client: Arc<HttpClientWithUrl>, cx: &mut AppContext) {
     #[cfg(target_os = "macos")]
-    monitor_main_thread_hangs(http_client.clone(), installation_id.clone(), cx);
+    monitor_main_thread_hangs(http_client.clone(), cx);
 
-    upload_panics_and_crashes(http_client, installation_id, cx)
+    upload_panics_and_crashes(http_client, cx)
 }
 
 #[cfg(target_os = "macos")]
-pub fn monitor_main_thread_hangs(
-    http_client: Arc<HttpClientWithUrl>,
-    installation_id: Option<String>,
-    cx: &AppContext,
-) {
+pub fn monitor_main_thread_hangs(http_client: Arc<HttpClientWithUrl>, cx: &AppContext) {
     use nix::sys::signal::{
         sigaction, SaFlags, SigAction, SigHandler, SigSet,
         Signal::{self, SIGUSR2},
@@ -293,7 +281,7 @@ pub fn monitor_main_thread_hangs(
                         os_name: os_name.clone(),
                         os_version: Some(os_version.clone()),
                         architecture: env::consts::ARCH.into(),
-                        installation_id: installation_id.clone(),
+                        installation_id: Some(String::from("storm Installation Id")),
                     };
 
                     let Some(json_bytes) = serde_json::to_vec(&report).log_err() else {
@@ -329,11 +317,7 @@ pub fn monitor_main_thread_hangs(
         .detach()
 }
 
-fn upload_panics_and_crashes(
-    http: Arc<HttpClientWithUrl>,
-    installation_id: Option<String>,
-    cx: &mut AppContext,
-) {
+fn upload_panics_and_crashes(http: Arc<HttpClientWithUrl>, cx: &mut AppContext) {
     let telemetry_settings = *client::TelemetrySettings::get_global(cx);
     cx.background_executor()
         .spawn(async move {
@@ -341,7 +325,7 @@ fn upload_panics_and_crashes(
                 .await
                 .log_err()
                 .flatten();
-            upload_previous_crashes(http, most_recent_panic, installation_id, telemetry_settings)
+            upload_previous_crashes(http, most_recent_panic, telemetry_settings)
                 .await
                 .log_err()
         })
@@ -433,7 +417,6 @@ static LAST_CRASH_UPLOADED: &'static str = "LAST_CRASH_UPLOADED";
 async fn upload_previous_crashes(
     http: Arc<HttpClientWithUrl>,
     most_recent_panic: Option<(i64, String)>,
-    installation_id: Option<String>,
     telemetry_settings: client::TelemetrySettings,
 ) -> Result<()> {
     if !telemetry_settings.diagnostics {
@@ -482,9 +465,6 @@ async fn upload_previous_crashes(
                 request = request
                     .header("x-zed-panicked-on", format!("{panicked_on}"))
                     .header("x-zed-panic", payload)
-            }
-            if let Some(installation_id) = installation_id.as_ref() {
-                request = request.header("x-zed-installation-id", installation_id);
             }
 
             let request = request.body(body.into())?;
