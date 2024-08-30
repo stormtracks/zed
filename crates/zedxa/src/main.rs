@@ -22,6 +22,7 @@ use gpui::{
 };
 use language::LanguageRegistry;
 use log::LevelFilter;
+use uuid::Uuid;
 
 use assets::Assets;
 use node_runtime::RealNodeRuntime;
@@ -207,10 +208,24 @@ fn main() {
         .with_assets(Assets)
         .measure_time_to_first_window_draw(start_time);
 
+    let (installation_id, _) = app
+        .background_executor()
+        .block(installation_id())
+        .ok()
+        .unzip();
+
     let session = app.background_executor().block(Session::new());
 
     let app_version = AppVersion::init(env!("CARGO_PKG_VERSION"));
-    reliability::init_panic_hook(app_version, session.id().to_owned());
+
+    reliability::init_panic_hook(
+        installation_id.clone(),
+        app_version,
+        session.id().to_owned(),
+    );
+
+    // trying to get crashing to work again
+    //reliability::init_panic_hook(app_version, session.id().to_owned());
 
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
@@ -304,7 +319,9 @@ fn main() {
         });
         AppState::set_global(Arc::downgrade(&app_state), cx);
 
-        reliability::init(client.http_client(), cx);
+        reliability::init(client.http_client(), installation_id, cx);
+
+        //reliability::init(client.http_client(), cx);
         init_common(app_state.clone(), cx);
 
         init_ui(app_state.clone(), cx).unwrap();
@@ -370,6 +387,32 @@ fn handle_settings_changed(error: Option<anyhow::Error>, cx: &mut AppContext) {
     }
 }
 
+async fn installation_id() -> Result<(String, bool)> {
+    let legacy_key_name = "device_id".to_string();
+    let key_name = "installation_id".to_string();
+
+    // Migrate legacy key to new key
+    if let Ok(Some(installation_id)) = KEY_VALUE_STORE.read_kvp(&legacy_key_name) {
+        KEY_VALUE_STORE
+            .write_kvp(key_name, installation_id.clone())
+            .await?;
+        KEY_VALUE_STORE.delete_kvp(legacy_key_name).await?;
+        return Ok((installation_id, true));
+    }
+
+    if let Ok(Some(installation_id)) = KEY_VALUE_STORE.read_kvp(&key_name) {
+        return Ok((installation_id, true));
+    }
+
+    let installation_id = Uuid::new_v4().to_string();
+
+    KEY_VALUE_STORE
+        .write_kvp(key_name, installation_id.clone())
+        .await?;
+
+    Ok((installation_id, false))
+}
+
 async fn restore_or_create_workspace(
     app_state: Arc<AppState>,
     cx: &mut AsyncAppContext,
@@ -390,7 +433,7 @@ async fn restore_or_create_workspace(
         cx.update(|cx| show_welcome_view(app_state, cx))?.await?;
     } else {
         cx.update(|cx| {
-            workspace::open_new(app_state, cx, |workspace, cx| {
+            workspace::open_new(Default::default(), app_state, cx, |workspace, cx| {
                 Editor::new_file(workspace, &Default::default(), cx)
             })
         })?

@@ -9,6 +9,8 @@ use isahc::config::Configurable;
 
 use http_client::{self, HttpClient, HttpClientWithUrl};
 use paths::{crashes_dir, crashes_retired_dir};
+use release_channel::ReleaseChannel;
+use release_channel::RELEASE_CHANNEL;
 use settings::Settings;
 use smol::stream::StreamExt;
 use std::{
@@ -25,7 +27,11 @@ use util::ResultExt;
 use crate::stdout_is_a_pty;
 static PANIC_COUNT: AtomicU32 = AtomicU32::new(0);
 
-pub fn init_panic_hook(app_version: SemanticVersion, session_id: String) {
+pub fn init_panic_hook(
+    installation_id: Option<String>,
+    app_version: SemanticVersion,
+    session_id: String,
+) {
     let is_pty = stdout_is_a_pty();
 
     panic::set_hook(Box::new(move |info| {
@@ -47,18 +53,22 @@ pub fn init_panic_hook(app_version: SemanticVersion, session_id: String) {
             .or_else(|| info.payload().downcast_ref::<String>().map(|s| s.clone()))
             .unwrap_or_else(|| "Box<Any>".to_string());
 
-        let location = info.location().unwrap();
-        let backtrace = Backtrace::new();
-        eprintln!(
-            "Thread {:?} panicked with {:?} at {}:{}:{}\n{:?}",
-            thread_name,
-            payload,
-            location.file(),
-            location.line(),
-            location.column(),
-            backtrace,
-        );
+        if *release_channel::RELEASE_CHANNEL == ReleaseChannel::Dev {
+            let location = info.location().unwrap();
+            let backtrace = Backtrace::new();
+            eprintln!(
+                "Thread {:?} panicked with {:?} at {}:{}:{}\n{:?}",
+                thread_name,
+                payload,
+                location.file(),
+                location.line(),
+                location.column(),
+                backtrace,
+            );
+            std::process::exit(-1);
+        }
 
+        let backtrace = Backtrace::new();
         let mut backtrace = backtrace
             .frames()
             .iter()
@@ -86,13 +96,13 @@ pub fn init_panic_hook(app_version: SemanticVersion, session_id: String) {
                 line: location.line(),
             }),
             app_version: app_version.to_string(),
-            release_channel: "my_local".into(),
+            release_channel: RELEASE_CHANNEL.display_name().into(),
             os_name: telemetry::os_name(),
             os_version: Some(telemetry::os_version()),
             architecture: env::consts::ARCH.into(),
             panicked_on: Utc::now().timestamp_millis(),
             backtrace,
-            installation_id: Some(String::from("storm Installation Id")),
+            installation_id: installation_id.clone(),
             session_id: session_id.clone(),
         };
 
@@ -120,15 +130,31 @@ pub fn init_panic_hook(app_version: SemanticVersion, session_id: String) {
     }));
 }
 
-pub fn init(http_client: Arc<HttpClientWithUrl>, cx: &mut AppContext) {
+pub fn init(
+    http_client: Arc<HttpClientWithUrl>,
+    installation_id: Option<String>,
+    cx: &mut AppContext,
+) {
     #[cfg(target_os = "macos")]
-    monitor_main_thread_hangs(http_client.clone(), cx);
+    monitor_main_thread_hangs(http_client.clone(), installation_id.clone(), cx);
 
-    upload_panics_and_crashes(http_client, cx)
+    upload_panics_and_crashes(http_client, installation_id, cx)
 }
 
 #[cfg(target_os = "macos")]
-pub fn monitor_main_thread_hangs(http_client: Arc<HttpClientWithUrl>, cx: &AppContext) {
+pub fn monitor_main_thread_hangs(
+    http_client: Arc<HttpClientWithUrl>,
+    installation_id: Option<String>,
+    cx: &AppContext,
+) {
+    // This is too noisy to ship to stable for now.
+    if !matches!(
+        ReleaseChannel::global(cx),
+        ReleaseChannel::Dev | ReleaseChannel::Nightly | ReleaseChannel::Preview
+    ) {
+        return;
+    }
+
     use nix::sys::signal::{
         sigaction, SaFlags, SigAction, SigHandler, SigSet,
         Signal::{self, SIGUSR2},
@@ -281,7 +307,7 @@ pub fn monitor_main_thread_hangs(http_client: Arc<HttpClientWithUrl>, cx: &AppCo
                         os_name: os_name.clone(),
                         os_version: Some(os_version.clone()),
                         architecture: env::consts::ARCH.into(),
-                        installation_id: Some(String::from("storm Installation Id")),
+                        installation_id: installation_id.clone(),
                     };
 
                     let Some(json_bytes) = serde_json::to_vec(&report).log_err() else {
@@ -317,7 +343,11 @@ pub fn monitor_main_thread_hangs(http_client: Arc<HttpClientWithUrl>, cx: &AppCo
         .detach()
 }
 
-fn upload_panics_and_crashes(http: Arc<HttpClientWithUrl>, cx: &mut AppContext) {
+fn upload_panics_and_crashes(
+    http: Arc<HttpClientWithUrl>,
+    installation_id: Option<String>,
+    cx: &mut AppContext,
+) {
     let telemetry_settings = *client::TelemetrySettings::get_global(cx);
     cx.background_executor()
         .spawn(async move {
@@ -325,7 +355,7 @@ fn upload_panics_and_crashes(http: Arc<HttpClientWithUrl>, cx: &mut AppContext) 
                 .await
                 .log_err()
                 .flatten();
-            upload_previous_crashes(http, most_recent_panic, telemetry_settings)
+            upload_previous_crashes(http, most_recent_panic, installation_id, telemetry_settings)
                 .await
                 .log_err()
         })
@@ -417,6 +447,7 @@ static LAST_CRASH_UPLOADED: &'static str = "LAST_CRASH_UPLOADED";
 async fn upload_previous_crashes(
     http: Arc<HttpClientWithUrl>,
     most_recent_panic: Option<(i64, String)>,
+    installation_id: Option<String>,
     telemetry_settings: client::TelemetrySettings,
 ) -> Result<()> {
     if !telemetry_settings.diagnostics {
@@ -465,6 +496,9 @@ async fn upload_previous_crashes(
                 request = request
                     .header("x-zed-panicked-on", format!("{panicked_on}"))
                     .header("x-zed-panic", payload)
+            }
+            if let Some(installation_id) = installation_id.as_ref() {
+                request = request.header("x-zed-installation-id", installation_id);
             }
 
             let request = request.body(body.into())?;
