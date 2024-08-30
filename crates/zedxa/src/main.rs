@@ -224,9 +224,6 @@ fn main() {
         session.id().to_owned(),
     );
 
-    // trying to get crashing to work again
-    //reliability::init_panic_hook(app_version, session.id().to_owned());
-
     let git_hosting_provider_registry = Arc::new(GitHostingProviderRegistry::new());
     let git_binary_path =
         if cfg!(target_os = "macos") && option_env!("ZED_BUNDLE").as_deref() == Some("true") {
@@ -321,7 +318,6 @@ fn main() {
 
         reliability::init(client.http_client(), installation_id, cx);
 
-        //reliability::init(client.http_client(), cx);
         init_common(app_state.clone(), cx);
 
         init_ui(app_state.clone(), cx).unwrap();
