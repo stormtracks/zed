@@ -15,7 +15,6 @@ use db::kvp::KEY_VALUE_STORE;
 use editor::Editor;
 use env_logger::Builder;
 use fs::{Fs, RealFs};
-use futures::StreamExt;
 use git::GitHostingProviderRegistry;
 use gpui::{
     Action, App, AppContext, AsyncAppContext, Context, DismissEvent, Global, Task, VisualContext,
@@ -35,11 +34,10 @@ use std::{
     env,
     fs::OpenOptions,
     io::{IsTerminal, Write},
-    path::Path,
     process,
     sync::Arc,
 };
-use theme::{ActiveTheme, SystemAppearance, ThemeRegistry, ThemeSettings};
+use theme::{ActiveTheme, SystemAppearance};
 use time::UtcOffset;
 use util::ResultExt;
 use welcome::{show_welcome_view, FIRST_OPEN};

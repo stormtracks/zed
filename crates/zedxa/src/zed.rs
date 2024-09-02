@@ -1,43 +1,23 @@
 mod app_menus;
 
 pub use app_menus::*;
-use breadcrumbs::Breadcrumbs;
-use client::ZED_URL_SCHEME;
-use collections::VecDeque;
-use editor::{scroll::Autoscroll, Editor, MultiBuffer};
 use gpui::{
-    actions, point, px, AppContext, AsyncAppContext, Context, FocusableView, MenuItem, PromptLevel,
-    TitlebarOptions, View, ViewContext, VisualContext, WindowKind, WindowOptions,
+    actions, point, px, AppContext, MenuItem, PromptLevel, TitlebarOptions, WindowKind,
+    WindowOptions,
 };
 
-use anyhow::Context as _;
 use futures::{channel::mpsc, select_biased, StreamExt};
-use outline_panel::OutlinePanel;
-use project::TaskSourceKind;
-use release_channel::{AppCommitSha, ReleaseChannel};
-use search::project_search::ProjectSearchBar;
-use settings::{
-    initial_local_settings_content, initial_tasks_content, watch_config_file, KeymapFile, Settings,
-    SettingsStore, DEFAULT_KEYMAP_PATH,
-};
-use std::{borrow::Cow, ops::Deref, path::Path, sync::Arc};
-use task::static_source::{StaticSource, TrackedFile};
+use release_channel::ReleaseChannel;
+use settings::{KeymapFile, Settings, SettingsStore, DEFAULT_KEYMAP_PATH};
 use theme::ActiveTheme;
-use workspace::notifications::NotificationId;
 use workspace::CloseIntent;
 
-use paths::{local_settings_file_relative_path, local_tasks_file_relative_path};
-use terminal_view::terminal_panel::{self, TerminalPanel};
 use util::ResultExt;
 use uuid::Uuid;
 use vim::VimModeSetting;
-use welcome::{BaseKeymap, MultibufferHint};
-use workspace::{
-    notifications::simple_message_notification::MessageNotification, open_new, AppState, NewFile,
-    NewWindow, OpenLog, Toast, Workspace, WorkspaceSettings,
-};
-use workspace::{notifications::DetachAndPromptErr, Pane};
-use zed_actions::{OpenAccountSettings, OpenBrowser, Quit};
+use welcome::BaseKeymap;
+use workspace::{Workspace, WorkspaceSettings};
+use zed_actions::Quit;
 
 actions!(
     zed,
@@ -751,8 +731,9 @@ fn open_local_file(
         })
     }
 }
-*/
+
 async fn register_zed_scheme(cx: &AsyncAppContext) -> anyhow::Result<()> {
     cx.update(|cx| cx.register_url_scheme(ZED_URL_SCHEME))?
         .await
 }
+*/
