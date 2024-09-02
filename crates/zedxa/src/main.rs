@@ -12,7 +12,6 @@ use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
 use client::{Client, UserStore};
 use db::kvp::KEY_VALUE_STORE;
-use editor::Editor;
 use env_logger::Builder;
 use fs::{Fs, RealFs};
 use git::GitHostingProviderRegistry;
@@ -25,10 +24,9 @@ use uuid::Uuid;
 
 use assets::Assets;
 use node_runtime::RealNodeRuntime;
-use parking_lot::Mutex;
 use release_channel::{AppCommitSha, AppVersion};
 use session::{AppSession, Session};
-use settings::{handle_settings_file_changes, watch_config_file, Settings};
+use settings::{handle_settings_file_changes, watch_config_file};
 use simplelog::ConfigBuilder;
 use std::{
     env,
@@ -40,10 +38,10 @@ use std::{
 use theme::{ActiveTheme, SystemAppearance};
 use time::UtcOffset;
 use util::ResultExt;
-use welcome::{show_welcome_view, FIRST_OPEN};
+use welcome::show_welcome_view;
 use workspace::{
     notifications::{simple_message_notification::MessageNotification, NotificationId},
-    AppState, WorkspaceSettings, WorkspaceStore,
+    AppState, WorkspaceStore,
 };
 use zed::{app_menus, build_window_options, handle_keymap_file_changes};
 
@@ -103,7 +101,6 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
             cx.set_global(AppMode::Ui);
         }
     };
-    load_embedded_fonts(cx);
     app_state.languages.set_theme(cx.theme().clone());
     editor::init(cx);
     workspace::init(app_state.clone(), cx);
@@ -452,28 +449,4 @@ struct Args {
     /// Instructs zed to run as a dev server on this machine. (not implemented)
     #[arg(long)]
     dev_server_token: Option<String>,
-}
-
-fn load_embedded_fonts(cx: &AppContext) {
-    let asset_source = cx.asset_source();
-    let font_paths = asset_source.list("fonts").unwrap();
-    let embedded_fonts = Mutex::new(Vec::new());
-    let executor = cx.background_executor();
-
-    executor.block(executor.scoped(|scope| {
-        for font_path in &font_paths {
-            if !font_path.ends_with(".ttf") {
-                continue;
-            }
-
-            scope.spawn(async {
-                let font_bytes = asset_source.load(font_path).unwrap().unwrap();
-                embedded_fonts.lock().push(font_bytes);
-            });
-        }
-    }));
-
-    cx.text_system()
-        .add_fonts(embedded_fonts.into_inner())
-        .unwrap();
 }
