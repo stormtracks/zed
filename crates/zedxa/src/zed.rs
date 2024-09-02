@@ -14,7 +14,6 @@ use anyhow::Context as _;
 use futures::{channel::mpsc, select_biased, StreamExt};
 use outline_panel::OutlinePanel;
 use project::TaskSourceKind;
-use project_panel::ProjectPanel;
 use release_channel::{AppCommitSha, ReleaseChannel};
 use search::project_search::ProjectSearchBar;
 use settings::{
@@ -203,7 +202,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
                 })
             });
         }
-
+/*
         cx.spawn(|workspace_handle, mut cx| async move {
             let project_panel = ProjectPanel::load(workspace_handle.clone(), cx.clone());
             let outline_panel = OutlinePanel::load(workspace_handle.clone(), cx.clone());
@@ -226,7 +225,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
             })
         })
         .detach();
-
+*/
         workspace
             .register_action(about)
             .register_action(|_, _: &Minimize, cx| {
@@ -338,6 +337,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
             )
             .register_action(open_local_settings_file)
             .register_action(open_local_tasks_file)
+            /*
             .register_action(
                 |workspace: &mut Workspace,
                  _: &project_panel::ToggleFocus,
@@ -345,6 +345,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
                     workspace.toggle_panel_focus::<ProjectPanel>(cx);
                 },
             )
+            */
             .register_action(
                 |workspace: &mut Workspace,
                  _: &outline_panel::ToggleFocus,
@@ -394,9 +395,10 @@ fn initialize_pane(_workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewC
             toolbar.add_item(multibuffer_hint, cx);
             let breadcrumbs = cx.new_view(|_| Breadcrumbs::new());
             toolbar.add_item(breadcrumbs, cx);
+            /*
             let buffer_search_bar = cx.new_view(search::BufferSearchBar::new);
             toolbar.add_item(buffer_search_bar.clone(), cx);
-            /*
+
             let quick_action_bar =
                 cx.new_view(|cx| QuickActionBar::new(buffer_search_bar, workspace, cx));
             toolbar.add_item(quick_action_bar, cx);

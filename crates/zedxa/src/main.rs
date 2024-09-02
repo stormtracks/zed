@@ -125,14 +125,17 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
 
     app_state.languages.set_theme(cx.theme().clone());
     editor::init(cx);
-    diagnostics::init(cx);
+    //diagnostics::init(cx);
 
     workspace::init(app_state.clone(), cx);
 
+    /*
     recent_projects::init(cx);
     go_to_line::init(cx);
     file_finder::init(cx);
+    */
     tab_switcher::init(cx);
+    /*
     outline::init(cx);
     project_symbols::init(cx);
     project_panel::init(Assets, cx);
@@ -144,16 +147,20 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     terminal_view::init(cx);
     journal::init(app_state.clone(), cx);
     language_selector::init(cx);
+    */
     theme_selector::init(cx);
+    /*
     language_tools::init(cx);
     call::init(app_state.client.clone(), app_state.user_store.clone(), cx);
     notifications::init(app_state.client.clone(), app_state.user_store.clone(), cx);
     feedback::init(cx);
     markdown_preview::init(cx);
+    */
     welcome::init(cx);
-    settings_ui::init(cx);
-    performance::init(cx);
+    //settings_ui::init(cx);
+    //performance::init(cx);
 
+    /*
     cx.observe_global::<SettingsStore>({
         let languages = app_state.languages.clone();
         let http = app_state.client.http_client();
@@ -184,9 +191,9 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
     watch_themes(fs.clone(), cx);
     watch_languages(fs.clone(), app_state.languages.clone(), cx);
     watch_file_types(fs.clone(), cx);
-
+    */
     cx.set_menus(app_menus());
-    initialize_workspace(app_state.clone(), cx);
+    //initialize_workspace(app_state.clone(), cx);
 
     cx.activate(true);
 
