@@ -90,25 +90,10 @@ enum AppMode {
 }
 impl Global for AppMode {}
 
-// init_common is called for both headless and normal mode.
 fn init_common(_app_state: Arc<AppState>, cx: &mut AppContext) {
     SystemAppearance::init(cx);
     theme::init(theme::LoadThemes::All(Box::new(Assets)), cx);
     command_palette::init(cx);
-    /*
-    language_model::init(
-        app_state.user_store.clone(),
-        app_state.client.clone(),
-        app_state.fs.clone(),
-        cx,
-    );
-    snippet_provider::init(cx);
-    repl::init(
-        app_state.fs.clone(),
-        app_state.client.telemetry().clone(),
-        cx,
-    );
-    */
 }
 
 fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
@@ -118,83 +103,15 @@ fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
             cx.set_global(AppMode::Ui);
         }
     };
-
     load_embedded_fonts(cx);
-
     app_state.languages.set_theme(cx.theme().clone());
     editor::init(cx);
-    //diagnostics::init(cx);
-
     workspace::init(app_state.clone(), cx);
-
-    /*
-    recent_projects::init(cx);
-    go_to_line::init(cx);
-    file_finder::init(cx);
-    */
     tab_switcher::init(cx);
-    /*
-    outline::init(cx);
-    project_symbols::init(cx);
-    project_panel::init(Assets, cx);
-    outline_panel::init(Assets, cx);
-    tasks_ui::init(cx);
-    channel::init(&app_state.client.clone(), app_state.user_store.clone(), cx);
-    search::init(cx);
-    vim::init(cx);
-    terminal_view::init(cx);
-    journal::init(app_state.clone(), cx);
-    language_selector::init(cx);
-    */
     theme_selector::init(cx);
-    /*
-    language_tools::init(cx);
-    call::init(app_state.client.clone(), app_state.user_store.clone(), cx);
-    notifications::init(app_state.client.clone(), app_state.user_store.clone(), cx);
-    feedback::init(cx);
-    markdown_preview::init(cx);
-    */
     welcome::init(cx);
-    //settings_ui::init(cx);
-    //performance::init(cx);
-
-    /*
-    cx.observe_global::<SettingsStore>({
-        let languages = app_state.languages.clone();
-        let http = app_state.client.http_client();
-        let client = app_state.client.clone();
-
-        move |cx| {
-            for &mut window in cx.windows().iter_mut() {
-                let background_appearance = cx.theme().window_background_appearance();
-                window
-                    .update(cx, |_, cx| {
-                        cx.set_background_appearance(background_appearance)
-                    })
-                    .ok();
-            }
-            languages.set_theme(cx.theme().clone());
-            let new_host = &client::ClientSettings::get_global(cx).server_url;
-            if &http.base_url() != new_host {
-                http.set_base_url(new_host);
-                if client.status().borrow().is_connected() {
-                    client.reconnect(&cx.to_async());
-                }
-            }
-        }
-    })
-    .detach();
-    let fs = app_state.fs.clone();
-    load_user_themes_in_background(fs.clone(), cx);
-    watch_themes(fs.clone(), cx);
-    watch_languages(fs.clone(), app_state.languages.clone(), cx);
-    watch_file_types(fs.clone(), cx);
-    */
     cx.set_menus(app_menus());
-    //initialize_workspace(app_state.clone(), cx);
-
     cx.activate(true);
-
     Ok(())
 }
 
@@ -644,136 +561,3 @@ fn load_embedded_fonts(cx: &AppContext) {
         .add_fonts(embedded_fonts.into_inner())
         .unwrap();
 }
-
-/*
-/// Spawns a background task to load the user themes from the themes directory.
-fn load_user_themes_in_background(fs: Arc<dyn fs::Fs>, cx: &mut AppContext) {
-    cx.spawn({
-        let fs = fs.clone();
-        |cx| async move {
-            if let Some(theme_registry) =
-                cx.update(|cx| ThemeRegistry::global(cx).clone()).log_err()
-            {
-                let themes_dir = paths::themes_dir().as_ref();
-                match fs
-                    .metadata(themes_dir)
-                    .await
-                    .ok()
-                    .flatten()
-                    .map(|m| m.is_dir)
-                {
-                    Some(is_dir) => {
-                        anyhow::ensure!(is_dir, "Themes dir path {themes_dir:?} is not a directory")
-                    }
-                    None => {
-                        fs.create_dir(themes_dir).await.with_context(|| {
-                            format!("Failed to create themes dir at path {themes_dir:?}")
-                        })?;
-                    }
-                }
-                theme_registry.load_user_themes(themes_dir, fs).await?;
-                cx.update(|cx| ThemeSettings::reload_current_theme(cx))?;
-            }
-            anyhow::Ok(())
-        }
-    })
-    .detach_and_log_err(cx);
-}
-
-/// Spawns a background task to watch the themes directory for changes.
-fn watch_themes(fs: Arc<dyn fs::Fs>, cx: &mut AppContext) {
-    use std::time::Duration;
-    cx.spawn(|cx| async move {
-        let (mut events, _) = fs
-            .watch(paths::themes_dir(), Duration::from_millis(100))
-            .await;
-
-        while let Some(paths) = events.next().await {
-            for path in paths {
-                if fs.metadata(&path).await.ok().flatten().is_some() {
-                    if let Some(theme_registry) =
-                        cx.update(|cx| ThemeRegistry::global(cx).clone()).log_err()
-                    {
-                        if let Some(()) = theme_registry
-                            .load_user_theme(&path, fs.clone())
-                            .await
-                            .log_err()
-                        {
-                            cx.update(|cx| ThemeSettings::reload_current_theme(cx))
-                                .log_err();
-                        }
-                    }
-                }
-            }
-        }
-    })
-    .detach()
-}
-
-
-
-
-
-#[cfg(debug_assertions)]
-fn watch_languages(fs: Arc<dyn fs::Fs>, languages: Arc<LanguageRegistry>, cx: &mut AppContext) {
-    use std::time::Duration;
-
-    let path = {
-        let p = Path::new("crates/languages/src");
-        let Ok(full_path) = p.canonicalize() else {
-            return;
-        };
-        full_path
-    };
-
-    cx.spawn(|_| async move {
-        let (mut events, _) = fs.watch(path.as_path(), Duration::from_millis(100)).await;
-        while let Some(event) = events.next().await {
-            let has_language_file = event.iter().any(|path| {
-                path.extension()
-                    .map(|ext| ext.to_string_lossy().as_ref() == "scm")
-                    .unwrap_or(false)
-            });
-            if has_language_file {
-                languages.reload();
-            }
-        }
-    })
-    .detach()
-}
-
-#[cfg(not(debug_assertions))]
-fn watch_languages(_fs: Arc<dyn fs::Fs>, _languages: Arc<LanguageRegistry>, _cx: &mut AppContext) {}
-
-#[cfg(debug_assertions)]
-fn watch_file_types(fs: Arc<dyn fs::Fs>, cx: &mut AppContext) {
-    use std::time::Duration;
-
-    use file_icons::FileIcons;
-    use gpui::UpdateGlobal;
-
-    let path = {
-        let p = Path::new("assets/icons/file_icons/file_types.json");
-        let Ok(full_path) = p.canonicalize() else {
-            return;
-        };
-        full_path
-    };
-
-    cx.spawn(|cx| async move {
-        let (mut events, _) = fs.watch(path.as_path(), Duration::from_millis(100)).await;
-        while (events.next().await).is_some() {
-            cx.update(|cx| {
-                FileIcons::update_global(cx, |file_types, _cx| {
-                    *file_types = file_icons::FileIcons::new(Assets);
-                });
-            })
-            .ok();
-        }
-    })
-    .detach()
-}
-
-#[cfg(not(debug_assertions))]
-fn watch_file_types(_fs: Arc<dyn fs::Fs>, _cx: &mut AppContext) {}
-*/
