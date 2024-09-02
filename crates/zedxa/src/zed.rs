@@ -108,6 +108,7 @@ pub fn build_window_options(display_uuid: Option<Uuid>, cx: &mut AppContext) -> 
     }
 }
 
+/*
 pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
     cx.observe_new_views(move |workspace: &mut Workspace, cx| {
         let workspace_handle = cx.view().clone();
@@ -227,7 +228,7 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
         .detach();
 */
         workspace
-            .register_action(about)
+            //.register_action(about)
             .register_action(|_, _: &Minimize, cx| {
                 cx.minimize_window();
             })
@@ -326,9 +327,11 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
                     |_, _| None,
                 );
             })
+            /*
             .register_action(|workspace, _: &OpenLog, cx| {
                 open_log_file(workspace, cx);
             })
+            */
             .register_action(
                 |_: &mut Workspace, _: &OpenAccountSettings, cx: &mut ViewContext<Workspace>| {
                     let server_url = &client::ClientSettings::get_global(cx).server_url;
@@ -416,6 +419,7 @@ fn initialize_pane(_workspace: &mut Workspace, pane: &View<Pane>, cx: &mut ViewC
     });
 }
 
+
 fn about(_: &mut Workspace, _: &zed_actions::About, cx: &mut gpui::ViewContext<Workspace>) {
     let release_channel = ReleaseChannel::global(cx).display_name();
     let version = env!("CARGO_PKG_VERSION");
@@ -429,7 +433,7 @@ fn about(_: &mut Workspace, _: &zed_actions::About, cx: &mut gpui::ViewContext<W
         })
         .detach();
 }
-
+*/
 fn test_panic(_: &TestPanic, _: &mut AppContext) {
     panic!("Ran the TestPanic action")
 }
@@ -490,6 +494,7 @@ fn quit(_: &Quit, cx: &mut AppContext) {
     .detach_and_log_err(cx);
 }
 
+/*
 fn open_log_file(workspace: &mut Workspace, cx: &mut ViewContext<Workspace>) {
     const MAX_LINES: usize = 1000;
     workspace
@@ -576,7 +581,7 @@ fn open_log_file(workspace: &mut Workspace, cx: &mut ViewContext<Workspace>) {
         })
         .detach();
 }
-
+*/
 pub fn handle_keymap_file_changes(
     mut user_keymap_file_rx: mpsc::UnboundedReceiver<String>,
     cx: &mut AppContext,
