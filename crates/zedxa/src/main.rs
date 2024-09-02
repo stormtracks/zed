@@ -29,7 +29,7 @@ use node_runtime::RealNodeRuntime;
 use parking_lot::Mutex;
 use release_channel::{AppCommitSha, AppVersion};
 use session::{AppSession, Session};
-use settings::{handle_settings_file_changes, watch_config_file, Settings, SettingsStore};
+use settings::{handle_settings_file_changes, watch_config_file, Settings};
 use simplelog::ConfigBuilder;
 use std::{
     env,
@@ -47,7 +47,7 @@ use workspace::{
     notifications::{simple_message_notification::MessageNotification, NotificationId},
     AppState, WorkspaceSettings, WorkspaceStore,
 };
-use zed::{app_menus, build_window_options, handle_keymap_file_changes, initialize_workspace};
+use zed::{app_menus, build_window_options, handle_keymap_file_changes};
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -647,6 +647,7 @@ fn load_embedded_fonts(cx: &AppContext) {
         .unwrap();
 }
 
+/*
 /// Spawns a background task to load the user themes from the themes directory.
 fn load_user_themes_in_background(fs: Arc<dyn fs::Fs>, cx: &mut AppContext) {
     cx.spawn({
@@ -711,6 +712,10 @@ fn watch_themes(fs: Arc<dyn fs::Fs>, cx: &mut AppContext) {
     .detach()
 }
 
+
+
+
+
 #[cfg(debug_assertions)]
 fn watch_languages(fs: Arc<dyn fs::Fs>, languages: Arc<LanguageRegistry>, cx: &mut AppContext) {
     use std::time::Duration;
@@ -773,3 +778,4 @@ fn watch_file_types(fs: Arc<dyn fs::Fs>, cx: &mut AppContext) {
 
 #[cfg(not(debug_assertions))]
 fn watch_file_types(_fs: Arc<dyn fs::Fs>, _cx: &mut AppContext) {}
+*/

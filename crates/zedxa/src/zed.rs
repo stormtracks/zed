@@ -335,8 +335,8 @@ pub fn initialize_workspace(app_state: Arc<AppState>, cx: &mut AppContext) {
                     cx.open_url(&format!("{server_url}/account"));
                 },
             )
-            .register_action(open_local_settings_file)
-            .register_action(open_local_tasks_file)
+            //.register_action(open_local_settings_file)
+            //.register_action(open_local_tasks_file)
             /*
             .register_action(
                 |workspace: &mut Workspace,
@@ -651,6 +651,7 @@ pub fn load_default_keymap(cx: &mut AppContext) {
     }
 }
 
+/*
 fn open_local_settings_file(
     workspace: &mut Workspace,
     _: &OpenLocalSettings,
@@ -745,7 +746,7 @@ fn open_local_file(
         })
     }
 }
-
+*/
 async fn register_zed_scheme(cx: &AsyncAppContext) -> anyhow::Result<()> {
     cx.update(|cx| cx.register_url_scheme(ZED_URL_SCHEME))?
         .await
