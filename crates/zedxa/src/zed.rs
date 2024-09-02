@@ -38,7 +38,7 @@ use workspace::{
     NewWindow, OpenLog, Toast, Workspace, WorkspaceSettings,
 };
 use workspace::{notifications::DetachAndPromptErr, Pane};
-use zed_actions::{OpenAccountSettings, OpenBrowser, OpenSettings, Quit};
+use zed_actions::{OpenAccountSettings, OpenBrowser, Quit};
 
 actions!(
     zed,

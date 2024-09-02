@@ -1,6 +1,5 @@
 //use collab_ui::collab_panel;
-use gpui::{Menu, MenuItem, OsAction};
-use terminal_view::terminal_panel;
+use gpui::{Menu, MenuItem};
 
 pub fn app_menus() -> Vec<Menu> {
     use zed_actions::Quit;
@@ -10,6 +9,7 @@ pub fn app_menus() -> Vec<Menu> {
             name: "Zed".into(),
             items: vec![
                 MenuItem::action("About Zed…", zed_actions::About),
+                /*
                 MenuItem::action("Check for Updates", auto_update::Check),
                 MenuItem::separator(),
                 MenuItem::submenu(Menu {
@@ -29,9 +29,11 @@ pub fn app_menus() -> Vec<Menu> {
                 MenuItem::action("Hide Zed", super::Hide),
                 MenuItem::action("Hide Others", super::HideOthers),
                 MenuItem::action("Show All", super::ShowAll),
+                */
                 MenuItem::action("Quit", Quit),
             ],
         },
+        /*
         Menu {
             name: "File".into(),
             items: vec![
@@ -189,5 +191,6 @@ pub fn app_menus() -> Vec<Menu> {
                 ),
             ],
         },
+        */
     ]
 }
