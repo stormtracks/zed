@@ -8,7 +8,6 @@ mod zed;
 
 use anyhow::{anyhow, Context as _, Result};
 use chrono::Offset;
-use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
 use client::{Client, UserStore};
 use db::kvp::KEY_VALUE_STORE;
@@ -433,20 +432,4 @@ fn init_stdout_logger() {
 
 fn stdout_is_a_pty() -> bool {
     std::env::var(FORCE_CLI_MODE_ENV_VAR_NAME).ok().is_none() && std::io::stdout().is_terminal()
-}
-
-#[derive(Parser, Debug)]
-#[command(name = "zed", disable_version_flag = true)]
-struct Args {
-    /// A sequence of space-separated paths or urls that you want to open.
-    ///
-    /// Use `path:line:row` syntax to open a file at a specific location.
-    /// Non-existing paths and directories will ignore `:line:row` suffix.
-    ///
-    /// URLs can either be `file://` or `zed://` scheme, or relative to <https://zed.dev>.
-    paths_or_urls: Vec<String>,
-
-    /// Instructs zed to run as a dev server on this machine. (not implemented)
-    #[arg(long)]
-    dev_server_token: Option<String>,
 }
