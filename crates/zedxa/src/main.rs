@@ -93,10 +93,11 @@ enum AppMode {
 impl Global for AppMode {}
 
 // init_common is called for both headless and normal mode.
-fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
+fn init_common(_app_state: Arc<AppState>, cx: &mut AppContext) {
     SystemAppearance::init(cx);
     theme::init(theme::LoadThemes::All(Box::new(Assets)), cx);
     command_palette::init(cx);
+    /*
     language_model::init(
         app_state.user_store.clone(),
         app_state.client.clone(),
@@ -109,6 +110,7 @@ fn init_common(app_state: Arc<AppState>, cx: &mut AppContext) {
         app_state.client.telemetry().clone(),
         cx,
     );
+    */
 }
 
 fn init_ui(app_state: Arc<AppState>, cx: &mut AppContext) -> Result<()> {
