@@ -64,6 +64,7 @@ impl KeymapFile {
     pub fn load_asset(asset_path: &str, cx: &mut AppContext) -> Result<()> {
         let content = asset_str::<SettingsAssets>(asset_path);
 
+        println!("{:?}", content);
         Self::parse(content.as_ref())?.add_to_cx(cx)
     }
 
