@@ -91,9 +91,9 @@ impl<V: 'static> View<V> {
         let since_the_epoch = start
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards");
-        println!("{:?}", since_the_epoch);
-        println!("View::focus_handle");
-        self.read(cx).focus_handle(cx)
+        let handle = self.read(cx).focus_handle(cx);
+        println!("view-mia {:?} {:?}", since_the_epoch, handle);
+        handle
     }
 }
 
