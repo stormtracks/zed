@@ -86,6 +86,13 @@ impl<V: 'static> View<V> {
     where
         V: FocusableView,
     {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let start = SystemTime::now();
+        let since_the_epoch = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards");
+        println!("{:?}", since_the_epoch);
+        println!("View::focus_handle");
         self.read(cx).focus_handle(cx)
     }
 }
