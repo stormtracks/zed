@@ -394,6 +394,7 @@ impl<T: 'static> Model<T> {
 
     /// Grab a reference to this entity from the context.
     pub fn read<'a>(&self, cx: &'a AppContext) -> &'a T {
+        println!("{:?}", self);
         cx.entities.read(self)
     }
 
