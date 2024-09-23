@@ -4468,6 +4468,7 @@ impl<'a, V: 'static> ViewContext<'a, V> {
         Evt: 'static,
         V: EventEmitter<Evt>,
     {
+        println!("Emitting event: {:?}", TypeId::of::<Evt>());
         let emitter = self.view.model.entity_id;
         self.app.push_effect(Effect::Emit {
             emitter,
