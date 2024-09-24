@@ -4470,6 +4470,7 @@ impl<'a, V: 'static> ViewContext<'a, V> {
     {
         println!("Emitting event: {:?}", TypeId::of::<Evt>());
         let emitter = self.view.model.entity_id;
+        println!("model: {:?}", self.view.model);
         self.app.push_effect(Effect::Emit {
             emitter,
             event_type: TypeId::of::<Evt>(),
